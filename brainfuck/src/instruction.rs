@@ -1,6 +1,7 @@
 pub type Procedure = Box<[Instruction]>;
 
 #[must_use]
+#[derive(Debug, PartialEq)]
 pub enum Instruction {
     Right,
     Left,

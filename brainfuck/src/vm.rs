@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 
 const TAPE_LENGTH: usize = 30_000;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InputError,
     OutputError,
@@ -55,4 +55,65 @@ fn read_u8<R: Read>(read: &mut R) -> Option<u8> {
 
 fn write_u8<W: Write>(write: &mut W, value: u8) -> Option<()> {
     write.write_all(&[value]).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Instruction as I, VirtualMachine};
+
+    fn assert_interpret(code: &[I], input: &str, output: &str) {
+        let mut buffer = Vec::new();
+        let mut vm = VirtualMachine::new(input.as_bytes(), &mut buffer);
+        let res = vm.interpret(code);
+        assert_eq!(res, Ok(()));
+        assert_eq!(buffer, output.as_bytes());
+    }
+
+    #[test]
+    fn starts_with_zero_at_cell_zero() {
+        assert_interpret(&[I::Output], "", "\0")
+    }
+
+    #[test]
+    fn cat_copies_input() {
+        assert_interpret(
+            &[I::Input, I::Loop(Box::new([I::Output, I::Input]))],
+            "Hello, world!\0",
+            "Hello, world!",
+        )
+    }
+
+    #[test]
+    fn decrement_reverses_increment() {
+        assert_interpret(
+            &[
+                I::Input,
+                I::Increment,
+                I::Decrement,
+                I::Decrement,
+                I::Increment,
+                I::Output,
+            ],
+            "x",
+            "x",
+        )
+    }
+
+    #[test]
+    fn left_reverses_right() {
+        assert_interpret(
+            &[I::Input, I::Left, I::Right, I::Right, I::Left, I::Output],
+            "A",
+            "A",
+        )
+    }
+
+    #[test]
+    fn loop_zeroes_cell() {
+        assert_interpret(
+            &[I::Input, I::Loop(Box::new([I::Decrement])), I::Output],
+            "X",
+            "\0",
+        )
+    }
 }
