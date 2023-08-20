@@ -1,5 +1,7 @@
 use crate::lexer::Token;
 
+pub type Tree = Box<[Node]>;
+
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum Node {
@@ -9,7 +11,7 @@ pub enum Node {
     Decrement,
     Output,
     Input,
-    Loop(Box<[Node]>),
+    Loop(Tree),
 }
 
 #[must_use]
@@ -19,7 +21,7 @@ pub enum ParseError {
     MissingLoopEnd,
 }
 
-pub fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Box<[Node]>, ParseError> {
+pub fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
     parse_proc(&mut tokens.into_iter(), Context::Root)
 }
 
@@ -33,7 +35,7 @@ enum Context {
 fn parse_proc(
     tokens: &mut impl Iterator<Item = Token>,
     context: Context,
-) -> Result<Box<[Node]>, ParseError> {
+) -> Result<Tree, ParseError> {
     use {Context::*, Node as N, ParseError::*, Token as T};
     let mut result = Vec::new();
     while let Some(token) = tokens.next() {

@@ -1,7 +1,5 @@
-use crate::parser::Node;
+use crate::bytecode::{Instruction, Program};
 use std::io::{Read, Write};
-
-const TAPE_LENGTH: usize = 30_000;
 
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
@@ -10,38 +8,70 @@ pub enum RuntimeError {
 }
 
 pub struct VirtualMachine<R: Read, W: Write> {
-    dp: usize, // data pointer
-    data: Box<[u8]>,
+    program: Program,
+    pc: usize,
+    pointer: usize,
+    memory: Box<[u8]>,
     read: R,
     write: W,
 }
 
 impl<R: Read, W: Write> VirtualMachine<R, W> {
-    pub fn new(read: R, write: W) -> Self {
+    pub fn new(program: Program, tape_length: usize, read: R, write: W) -> Self {
         Self {
-            dp: 0,
-            data: Box::new([0; TAPE_LENGTH]),
+            program,
+            pc: 0,
+            pointer: 0,
+            memory: vec![0; tape_length].into_boxed_slice(),
             read,
             write,
         }
     }
 
-    pub fn interpret(&mut self, code: &[Node]) -> Result<(), RuntimeError> {
-        for instruction in code {
-            use {Node::*, RuntimeError::*};
-            match instruction {
-                Right => self.dp = (self.dp + 1) % TAPE_LENGTH,
-                Left => self.dp = self.dp.checked_sub(1).unwrap_or(TAPE_LENGTH - 1),
-                Increment => self.data[self.dp] = self.data[self.dp].wrapping_add(1),
-                Decrement => self.data[self.dp] = self.data[self.dp].wrapping_sub(1),
-                Output => write_u8(&mut self.write, self.data[self.dp]).ok_or(OutputError)?,
-                Input => self.data[self.dp] = read_u8(&mut self.read).ok_or(InputError)?,
-                Loop(body) => {
-                    while self.data[self.dp] != 0 {
-                        self.interpret(body)?;
-                    }
+    fn step(&mut self) -> Option<Result<(), RuntimeError>> {
+        let instruction = *self.program.get(self.pc)?;
+        self.pc += 1;
+
+        use Instruction as I;
+        match instruction {
+            I::MutPointer(offset) => {
+                self.pointer =
+                    (self.pointer as i32 + offset).rem_euclid(self.memory.len() as i32) as usize;
+            }
+            I::MutCell(offset) => {
+                self.memory[self.pointer] = self.memory[self.pointer].wrapping_add_signed(offset);
+            }
+            I::SetCell(value) => {
+                self.memory[self.pointer] = value;
+            }
+            I::RelJumpRightZero(offset) => {
+                if self.memory[self.pointer] == 0 {
+                    self.pc += offset as usize;
                 }
             }
+            I::RelJumpLeftNotZero(offset) => {
+                if self.memory[self.pointer] != 0 {
+                    self.pc -= offset as usize;
+                }
+            }
+            I::Input => {
+                match read_u8(&mut self.read) {
+                    Some(value) => self.memory[self.pointer] = value,
+                    None => return Some(Err(RuntimeError::InputError)),
+                };
+            }
+            I::Output => {
+                let Some(()) = write_u8(&mut self.write, self.memory[self.pointer]) else {
+                    return Some(Err(RuntimeError::OutputError))
+                };
+            }
+        }
+        Some(Ok(()))
+    }
+
+    pub fn run_all(&mut self) -> Result<(), RuntimeError> {
+        while let Some(result) = self.step() {
+            result?;
         }
         Ok(())
     }
@@ -59,25 +89,31 @@ fn write_u8<W: Write>(write: &mut W, value: u8) -> Option<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Node as N, VirtualMachine};
+    use super::{Instruction as I, Program, VirtualMachine};
 
-    fn assert_interpret(code: &[N], input: &str, output: &str) {
+    fn assert_interpret(program: Program, input: &str, output: &str) {
         let mut buffer = Vec::new();
-        let mut vm = VirtualMachine::new(input.as_bytes(), &mut buffer);
-        let res = vm.interpret(code);
+        let mut vm = VirtualMachine::new(program, 30_000, input.as_bytes(), &mut buffer);
+        let res = vm.run_all();
         assert_eq!(res, Ok(()));
         assert_eq!(buffer, output.as_bytes());
     }
 
     #[test]
     fn starts_with_zero_at_cell_zero() {
-        assert_interpret(&[N::Output], "", "\0")
+        assert_interpret(vec![I::Output], "", "\0")
     }
 
     #[test]
     fn cat_copies_input() {
         assert_interpret(
-            &[N::Input, N::Loop(Box::new([N::Output, N::Input]))],
+            vec![
+                I::Input,
+                I::RelJumpRightZero(3),
+                I::Output,
+                I::Input,
+                I::RelJumpLeftNotZero(3),
+            ],
             "Hello, world!\0",
             "Hello, world!",
         )
@@ -86,13 +122,13 @@ mod tests {
     #[test]
     fn decrement_reverses_increment() {
         assert_interpret(
-            &[
-                N::Input,
-                N::Increment,
-                N::Decrement,
-                N::Decrement,
-                N::Increment,
-                N::Output,
+            vec![
+                I::Input,
+                I::MutCell(1),
+                I::MutCell(-1),
+                I::MutCell(-1),
+                I::MutCell(1),
+                I::Output,
             ],
             "x",
             "x",
@@ -102,7 +138,14 @@ mod tests {
     #[test]
     fn left_reverses_right() {
         assert_interpret(
-            &[N::Input, N::Left, N::Right, N::Right, N::Left, N::Output],
+            vec![
+                I::Input,
+                I::MutPointer(1),
+                I::MutPointer(-1),
+                I::MutPointer(-1),
+                I::MutPointer(1),
+                I::Output,
+            ],
             "A",
             "A",
         )
@@ -111,9 +154,17 @@ mod tests {
     #[test]
     fn loop_zeroes_cell() {
         assert_interpret(
-            &[N::Input, N::Loop(Box::new([N::Decrement])), N::Output],
+            vec![
+                I::Input,
+                I::RelJumpRightZero(2),
+                I::MutCell(-1),
+                I::RelJumpLeftNotZero(2),
+                I::Output,
+            ],
             "X",
             "\0",
         )
     }
+
+    // TODO: better tests
 }
