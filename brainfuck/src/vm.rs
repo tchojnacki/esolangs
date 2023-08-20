@@ -1,4 +1,4 @@
-use crate::instruction::Instruction;
+use crate::parser::Node;
 use std::io::{Read, Write};
 
 const TAPE_LENGTH: usize = 30_000;
@@ -26,9 +26,9 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         }
     }
 
-    pub fn interpret(&mut self, code: &[Instruction]) -> Result<(), RuntimeError> {
+    pub fn interpret(&mut self, code: &[Node]) -> Result<(), RuntimeError> {
         for instruction in code {
-            use {Instruction::*, RuntimeError::*};
+            use {Node::*, RuntimeError::*};
             match instruction {
                 Right => self.dp = (self.dp + 1) % TAPE_LENGTH,
                 Left => self.dp = self.dp.checked_sub(1).unwrap_or(TAPE_LENGTH - 1),
@@ -59,9 +59,9 @@ fn write_u8<W: Write>(write: &mut W, value: u8) -> Option<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Instruction as I, VirtualMachine};
+    use super::{Node as N, VirtualMachine};
 
-    fn assert_interpret(code: &[I], input: &str, output: &str) {
+    fn assert_interpret(code: &[N], input: &str, output: &str) {
         let mut buffer = Vec::new();
         let mut vm = VirtualMachine::new(input.as_bytes(), &mut buffer);
         let res = vm.interpret(code);
@@ -71,13 +71,13 @@ mod tests {
 
     #[test]
     fn starts_with_zero_at_cell_zero() {
-        assert_interpret(&[I::Output], "", "\0")
+        assert_interpret(&[N::Output], "", "\0")
     }
 
     #[test]
     fn cat_copies_input() {
         assert_interpret(
-            &[I::Input, I::Loop(Box::new([I::Output, I::Input]))],
+            &[N::Input, N::Loop(Box::new([N::Output, N::Input]))],
             "Hello, world!\0",
             "Hello, world!",
         )
@@ -87,12 +87,12 @@ mod tests {
     fn decrement_reverses_increment() {
         assert_interpret(
             &[
-                I::Input,
-                I::Increment,
-                I::Decrement,
-                I::Decrement,
-                I::Increment,
-                I::Output,
+                N::Input,
+                N::Increment,
+                N::Decrement,
+                N::Decrement,
+                N::Increment,
+                N::Output,
             ],
             "x",
             "x",
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn left_reverses_right() {
         assert_interpret(
-            &[I::Input, I::Left, I::Right, I::Right, I::Left, I::Output],
+            &[N::Input, N::Left, N::Right, N::Right, N::Left, N::Output],
             "A",
             "A",
         )
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn loop_zeroes_cell() {
         assert_interpret(
-            &[I::Input, I::Loop(Box::new([I::Decrement])), I::Output],
+            &[N::Input, N::Loop(Box::new([N::Decrement])), N::Output],
             "X",
             "\0",
         )
