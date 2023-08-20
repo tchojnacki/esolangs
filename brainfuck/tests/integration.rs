@@ -38,3 +38,9 @@ fn hello_golf_works() {
 fn hello_normal_works() {
     run_spec("hello-normal")
 }
+
+#[ignore = "this is currently too slow"]
+#[test]
+fn mandelbrot_works() {
+    run_spec("mandelbrot")
+}
