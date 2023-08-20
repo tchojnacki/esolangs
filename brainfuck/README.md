@@ -37,5 +37,9 @@ VirtualMachine::new(stdin(), stdout()).interpret(&code).unwrap();
 - Customizable tape length.
 - Passing [code through stdin](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
+- Built-in code optimizer.
+- Bytecode generation step.
+- More convenient library API.
+- Better error messages.
 
 [^1]: [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)
