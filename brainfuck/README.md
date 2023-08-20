@@ -4,7 +4,7 @@
 
 ## Features
 
-- Fully implemented lexer, parser and interpreter.
+- Fully implemented lexer, parser, bytecode generator and interpreter.
 - Can be used as a binary or library.
 - Unit and integration test coverage.
 - Implementation choices:
@@ -25,10 +25,8 @@ brainfuck <(echo "++>+++++[<+>-]++++++++[<++++++>-]<.")
 ### Library
 
 ```Rust
-let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
-let tokens = tokenize(source.chars());
-let code = parse(tokens).unwrap();
-VirtualMachine::new(stdin(), stdout()).interpret(&code).unwrap();
+let program = compile("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.");
+VirtualMachine::new_std(program).run_all().unwrap();
 ```
 
 ## TODO
@@ -38,8 +36,6 @@ VirtualMachine::new(stdin(), stdout()).interpret(&code).unwrap();
 - Passing [code through stdin](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in code optimizer.
-- Bytecode generation step.
-- More convenient library API.
 - Better error messages.
 
 [^1]: [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)

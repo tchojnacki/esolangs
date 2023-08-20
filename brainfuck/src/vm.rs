@@ -1,12 +1,17 @@
-use crate::bytecode::{Instruction, Program};
-use std::io::{Read, Write};
+use crate::{
+    bytecode::{Instruction, Program},
+    util::{read_u8, write_u8},
+};
+use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
+#[must_use]
 #[derive(Debug, PartialEq)]
 pub enum RuntimeError {
     InputError,
     OutputError,
 }
 
+#[must_use]
 pub struct VirtualMachine<R: Read, W: Write> {
     program: Program,
     pc: usize,
@@ -14,6 +19,12 @@ pub struct VirtualMachine<R: Read, W: Write> {
     memory: Box<[u8]>,
     read: R,
     write: W,
+}
+
+impl VirtualMachine<Stdin, Stdout> {
+    pub fn new_std(program: Program) -> Self {
+        Self::new(program, 30_000, stdin(), stdout())
+    }
 }
 
 impl<R: Read, W: Write> VirtualMachine<R, W> {
@@ -28,6 +39,7 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         }
     }
 
+    #[must_use]
     fn step(&mut self) -> Option<Result<(), RuntimeError>> {
         let instruction = *self.program.get(self.pc)?;
         self.pc += 1;
@@ -75,16 +87,6 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         }
         Ok(())
     }
-}
-
-fn read_u8<R: Read>(read: &mut R) -> Option<u8> {
-    let mut buffer = [0];
-    read.read_exact(&mut buffer).ok()?;
-    Some(buffer[0])
-}
-
-fn write_u8<W: Write>(write: &mut W, value: u8) -> Option<()> {
-    write.write_all(&[value]).ok()
 }
 
 #[cfg(test)]
