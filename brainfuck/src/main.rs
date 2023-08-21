@@ -24,17 +24,26 @@ struct Args {
     filename: PathBuf,
 }
 
-fn run() -> Result<(), &'static str> {
+fn run() -> Result<(), String> {
     let args = Args::parse();
-    let source = fs::read_to_string(args.filename)
-        .map_err(|_| "InterpreterError: Could not read file at specified path.")?;
+    let source = fs::read_to_string(&args.filename).map_err(|_| {
+        format!(
+            "InterpreterError: Could not read file at path: {}",
+            fs::canonicalize(&args.filename)
+                .unwrap_or(args.filename)
+                .display()
+        )
+    })?;
     let program = compile(&source, true).map_err(|err| match err {
         ParseError::UnexpectedLoopEnd => "ParseError: Unexpected loop end (found ']').",
         ParseError::MissingLoopEnd => "ParseError: Missing loop end (found EOF).",
     })?;
     let mut vm = VirtualMachine::new(program, 30_000, stdin(), stdout());
-    vm.run_all().map_err(|err| match err {
-        RuntimeError::InputError => "RuntimeError: Could not read from input.",
-        RuntimeError::OutputError => "RuntimeError: Could not write to output.",
+    vm.run_all().map_err(|err| {
+        match err {
+            RuntimeError::InputError => "RuntimeError: Could not read from input.",
+            RuntimeError::OutputError => "RuntimeError: Could not write to output.",
+        }
+        .to_owned()
     })
 }
