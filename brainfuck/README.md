@@ -18,8 +18,8 @@
 
 ```
 brainfuck --help
-brainfuck tests/spec/hello-normal.code.bf
-brainfuck <(echo "++>+++++[<+>-]++++++++[<++++++>-]<.")
+brainfuck -f tests/spec/mandelbrot.code.bf
+brainfuck -f <(echo "++>+++++[<+>-]++++++++[<++++++>-]<.")
 ```
 
 ### Library
