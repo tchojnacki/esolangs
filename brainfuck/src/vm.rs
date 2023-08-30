@@ -116,7 +116,7 @@ mod tests {
                 I::Input,
                 I::RelJumpLeftNotZero(3),
             ],
-            "Hello, world!\0",
+            "Hello, world!",
             "Hello, world!",
         )
     }

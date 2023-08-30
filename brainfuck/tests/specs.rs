@@ -2,7 +2,7 @@ use assert_cmd::Command;
 use std::fs;
 
 fn run_spec(name: &'static str) {
-    const PATH: &str = "tests/spec";
+    const PATH: &str = "tests/specs";
     let mut command = Command::cargo_bin("brainfuck").unwrap();
     command.arg("-f").arg(format!("{PATH}/{name}.code.bf"));
     if let Ok(input) = fs::read_to_string(format!("{PATH}/{name}.in.txt")) {
@@ -17,6 +17,11 @@ fn run_spec(name: &'static str) {
 #[test]
 fn add_works() {
     run_spec("add")
+}
+
+#[test]
+fn cat_works() {
+    run_spec("cat")
 }
 
 #[test]

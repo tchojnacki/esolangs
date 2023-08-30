@@ -7,6 +7,7 @@
 - Fully implemented lexer, parser, bytecode generator and interpreter.
 - Can be used as a binary or library.
 - Unit and integration test coverage.
+- Reading code from file, as an argument or from stdin.
 - Implementation choices:
   - Cell size: 8 bit unsigned (with wrapping)
   - Cell count: 30 000 (with wrapping)
@@ -18,8 +19,8 @@
 
 ```
 brainfuck --help
-brainfuck -f tests/spec/mandelbrot.code.bf
-brainfuck -f <(echo "++>+++++[<+>-]++++++++[<++++++>-]<.")
+brainfuck -f tests/specs/mandelbrot.code.bf
+brainfuck -c "++>+++++[<+>-]++++++++[<++++++>-]<."
 ```
 
 ### Library
@@ -34,7 +35,6 @@ VirtualMachine::new_std(program).run_all().unwrap();
 - Customizable wrapping.
 - Customizable tape length.
 - Customizable EOF behaviour.
-- Passing [code through stdin](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in code optimizer.
 - Better error messages.

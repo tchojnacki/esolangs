@@ -10,6 +10,7 @@ use parser::parse;
 
 pub use {
     parser::ParseError,
+    util::read_u8,
     vm::{RuntimeError, VirtualMachine},
 };
 
