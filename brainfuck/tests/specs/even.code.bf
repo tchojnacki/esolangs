@@ -1,3 +1,4 @@
+[ Source: https://rosettacode.org/wiki/Even_or_odd ]
 ,[>,----------] Read until newline
 ++<             Get a 2 and move into position
 [->-[>+>>]>     Do
