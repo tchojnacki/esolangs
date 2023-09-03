@@ -2,7 +2,7 @@ use assert_cmd::Command;
 
 #[test]
 fn file_can_be_used_as_input() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-f")
         .arg("tests/specs/cat.code.bf")
@@ -14,7 +14,7 @@ fn file_can_be_used_as_input() {
 
 #[test]
 fn code_can_be_used_as_input() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-c")
         .arg(",[.,]")
@@ -26,7 +26,7 @@ fn code_can_be_used_as_input() {
 
 #[test]
 fn stdin_can_be_used_as_input() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-s")
         .write_stdin(",[.,]!Hello, world!")
@@ -37,7 +37,7 @@ fn stdin_can_be_used_as_input() {
 
 #[test]
 fn file_arg_requires_value() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-f")
         .assert()
@@ -46,7 +46,7 @@ fn file_arg_requires_value() {
 
 #[test]
 fn code_arg_requires_value() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-c")
         .assert()
@@ -55,7 +55,7 @@ fn code_arg_requires_value() {
 
 #[test]
 fn input_methods_are_mutually_exclusive() {
-    Command::cargo_bin("brainfuck")
+    Command::cargo_bin("bf")
         .unwrap()
         .arg("-s")
         .arg("-c")

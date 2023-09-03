@@ -18,15 +18,15 @@
 ### Binary
 
 ```
-brainfuck --help
-brainfuck -f tests/specs/mandelbrot.code.bf
-brainfuck -c "++>+++++[<+>-]++++++++[<++++++>-]<."
+bf --help
+bf -f tests/specs/mandelbrot.code.bf
+bf -c "++>+++++[<+>-]++++++++[<++++++>-]<."
 ```
 
 ### Library
 
 ```Rust
-let program = compile("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.");
+let program = compile("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.", true);
 VirtualMachine::new_std(program).run_all().unwrap();
 ```
 
