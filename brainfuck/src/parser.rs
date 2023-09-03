@@ -1,28 +1,13 @@
-use crate::lexer::Token;
-
-pub type Tree = Box<[Node]>;
-
-#[must_use]
-#[derive(Debug, PartialEq)]
-pub enum Node {
-    Right,
-    Left,
-    Increment,
-    Decrement,
-    Output,
-    Input,
-    Loop(Tree),
-}
+use crate::{
+    ast::{Node, Tree},
+    lexer::Token,
+};
 
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum ParseError {
     UnexpectedLoopEnd,
     MissingLoopEnd,
-}
-
-pub fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
-    parse_proc(&mut tokens.into_iter(), Context::Root)
 }
 
 #[must_use]
@@ -32,11 +17,15 @@ enum Context {
     InsideLoop,
 }
 
+pub fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
+    parse_proc(&mut tokens.into_iter(), Context::Root)
+}
+
 fn parse_proc(
     tokens: &mut impl Iterator<Item = Token>,
     context: Context,
 ) -> Result<Tree, ParseError> {
-    use {Context::*, Node as N, ParseError::*, Token as T};
+    use {Context as C, Node as N, ParseError as E, Token as T};
     let mut result = Vec::new();
     while let Some(token) = tokens.next() {
         result.push(match token {
@@ -46,18 +35,18 @@ fn parse_proc(
             T::Decrement => N::Decrement,
             T::Output => N::Output,
             T::Input => N::Input,
-            T::StartLoop => N::Loop(parse_proc(tokens, InsideLoop)?),
+            T::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop)?),
             T::EndLoop => {
                 return match context {
-                    InsideLoop => Ok(result.into()),
-                    Root => Err(UnexpectedLoopEnd),
+                    C::InsideLoop => Ok(result.into()),
+                    C::Root => Err(E::UnexpectedLoopEnd),
                 }
             }
         });
     }
     match context {
-        InsideLoop => Err(MissingLoopEnd),
-        Root => Ok(result.into()),
+        C::InsideLoop => Err(E::MissingLoopEnd),
+        C::Root => Ok(result.into()),
     }
 }
 

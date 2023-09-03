@@ -1,21 +1,10 @@
-use crate::parser::{Node, Tree};
-
-pub type Program = Vec<Instruction>;
-
-#[must_use]
-#[derive(Clone, Copy, Debug)]
-pub enum Instruction {
-    MutPointer(i32),
-    MutCell(i8),
-    SetCell(u8),
-    RelJumpRightZero(u32),
-    RelJumpLeftNotZero(u32),
-    Input,
-    Output,
-}
+use crate::{
+    ast::{Node, Tree},
+    instruction::{Instruction, Program},
+};
 
 #[must_use]
-pub fn generate(ast: &Tree) -> Program {
+pub fn emit(ast: &Tree) -> Program {
     let mut result = Vec::new();
     for node in ast.iter() {
         use {Instruction as I, Node as N};
@@ -27,7 +16,7 @@ pub fn generate(ast: &Tree) -> Program {
             N::Output => result.push(I::Output),
             N::Input => result.push(I::Input),
             N::Loop(subtree) => {
-                let mut subcode = generate(subtree);
+                let mut subcode = emit(subtree);
                 let jump = subcode.len() as u32 + 1;
 
                 result.push(I::RelJumpRightZero(jump));
@@ -37,11 +26,6 @@ pub fn generate(ast: &Tree) -> Program {
         };
     }
     result
-}
-
-#[must_use]
-pub fn optimize(input: Program) -> Program {
-    input
 }
 
 // TODO: tests

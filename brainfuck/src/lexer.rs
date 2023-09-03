@@ -12,28 +12,25 @@ pub enum Token {
 }
 
 pub fn tokenize(code: impl IntoIterator<Item = char>) -> impl Iterator<Item = Token> {
-    use Token::*;
+    use Token as T;
     code.into_iter().filter_map(|c| match c {
-        '>' => Some(Right),
-        '<' => Some(Left),
-        '+' => Some(Increment),
-        '-' => Some(Decrement),
-        '.' => Some(Output),
-        ',' => Some(Input),
-        '[' => Some(StartLoop),
-        ']' => Some(EndLoop),
+        '>' => Some(T::Right),
+        '<' => Some(T::Left),
+        '+' => Some(T::Increment),
+        '-' => Some(T::Decrement),
+        '.' => Some(T::Output),
+        ',' => Some(T::Input),
+        '[' => Some(T::StartLoop),
+        ']' => Some(T::EndLoop),
         _ => None,
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        tokenize,
-        Token::{self, *},
-    };
+    use super::{tokenize, Token as T};
 
-    fn assert_tokenizes(input: &'static str, expected: &[Token]) {
+    fn assert_tokenizes(input: &'static str, expected: &[T]) {
         assert_eq!(tokenize(input.chars()).collect::<Vec<_>>(), expected);
     }
 
@@ -42,7 +39,14 @@ mod tests {
         assert_tokenizes(
             "><+-.,[]",
             &[
-                Right, Left, Increment, Decrement, Output, Input, StartLoop, EndLoop,
+                T::Right,
+                T::Left,
+                T::Increment,
+                T::Decrement,
+                T::Output,
+                T::Input,
+                T::StartLoop,
+                T::EndLoop,
             ],
         )
     }
@@ -51,7 +55,13 @@ mod tests {
     fn tokenizes_invalid_programs() {
         assert_tokenizes(
             "]][[[",
-            &[EndLoop, EndLoop, StartLoop, StartLoop, StartLoop],
+            &[
+                T::EndLoop,
+                T::EndLoop,
+                T::StartLoop,
+                T::StartLoop,
+                T::StartLoop,
+            ],
         )
     }
 
@@ -60,22 +70,38 @@ mod tests {
         assert_tokenizes(
             ">>[-]<<[->>+<<]",
             &[
-                Right, Right, StartLoop, Decrement, EndLoop, Left, Left, StartLoop, Decrement,
-                Right, Right, Increment, Left, Left, EndLoop,
+                T::Right,
+                T::Right,
+                T::StartLoop,
+                T::Decrement,
+                T::EndLoop,
+                T::Left,
+                T::Left,
+                T::StartLoop,
+                T::Decrement,
+                T::Right,
+                T::Right,
+                T::Increment,
+                T::Left,
+                T::Left,
+                T::EndLoop,
             ],
         )
     }
 
     #[test]
     fn tokenizes_cat() {
-        assert_tokenizes(",[.,]", &[Input, StartLoop, Output, Input, EndLoop])
+        assert_tokenizes(
+            ",[.,]",
+            &[T::Input, T::StartLoop, T::Output, T::Input, T::EndLoop],
+        )
     }
 
     #[test]
     fn ignores_other_chars() {
         assert_tokenizes(
             "ab, a Z[ 12*3 . 1a :; , ''`]&",
-            &[Input, StartLoop, Output, Input, EndLoop],
+            &[T::Input, T::StartLoop, T::Output, T::Input, T::EndLoop],
         )
     }
 

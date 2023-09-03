@@ -1,5 +1,5 @@
 use crate::{
-    bytecode::{Instruction, Program},
+    instruction::{Instruction, Program},
     util::{read_u8, write_u8},
 };
 use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};

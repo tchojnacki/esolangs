@@ -1,11 +1,16 @@
-mod bytecode;
+mod ast;
+mod emitter;
+mod instruction;
 mod lexer;
+mod optimizer;
 mod parser;
 mod util;
 mod vm;
 
-use bytecode::{generate, optimize, Program};
+use emitter::emit;
+use instruction::Program;
 use lexer::tokenize;
+use optimizer::optimize;
 use parser::parse;
 
 pub use {
@@ -17,7 +22,7 @@ pub use {
 pub fn compile(code: &str, optimization: bool) -> Result<Program, ParseError> {
     let tokens = tokenize(code.chars());
     let ast = parse(tokens)?;
-    let program = generate(&ast);
+    let program = emit(&ast);
     Ok(match optimization {
         true => optimize(program),
         false => program,
