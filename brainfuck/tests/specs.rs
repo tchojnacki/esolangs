@@ -2,15 +2,15 @@ use assert_cmd::Command;
 use std::fs;
 
 fn run_spec(name: &'static str) {
-    const PATH: &str = "tests/specs";
+    let root = format!("specs/{name}");
     let mut command = Command::cargo_bin("bf").unwrap();
-    command.arg("-f").arg(format!("{PATH}/{name}.code.bf"));
-    if let Ok(input) = fs::read_to_string(format!("{PATH}/{name}.in.txt")) {
+    command.arg("-f").arg(format!("{root}.code.bf"));
+    if let Ok(input) = fs::read_to_string(format!("{root}.in.txt")) {
         command.write_stdin(input);
     }
-    let command = command.assert().success();
-    if let Ok(output) = fs::read_to_string(format!("{PATH}/{name}.out.txt")) {
-        command.stdout(output);
+    let assert = command.assert().success();
+    if let Ok(output) = fs::read_to_string(format!("{root}.out.txt")) {
+        assert.stdout(output);
     }
 }
 

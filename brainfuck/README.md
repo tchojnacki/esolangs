@@ -19,7 +19,7 @@
 
 ```
 bf --help
-bf -f tests/specs/mandelbrot.code.bf
+bf -f specs/mandelbrot.code.bf
 bf -c "++>+++++[<+>-]++++++++[<++++++>-]<."
 ```
 

@@ -5,7 +5,7 @@ fn file_can_be_used_as_input() {
     Command::cargo_bin("bf")
         .unwrap()
         .arg("-f")
-        .arg("tests/specs/cat.code.bf")
+        .arg("specs/cat.code.bf")
         .write_stdin("Hello, world!")
         .assert()
         .success()
