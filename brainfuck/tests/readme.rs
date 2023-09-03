@@ -1,12 +1,10 @@
-use assert_cmd::Command;
+use util::bf;
+
+mod util;
 
 #[test]
 fn binary_examples() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("--help")
-        .assert()
-        .success();
+    bf().arg("--help").assert().success();
 
     // TODO: this is too slow
     // Command::cargo_bin("bf")
@@ -16,9 +14,7 @@ fn binary_examples() {
     //     .assert()
     //     .success();
 
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-c")
+    bf().arg("-c")
         .arg("++>+++++[<+>-]++++++++[<++++++>-]<.")
         .assert()
         .success();

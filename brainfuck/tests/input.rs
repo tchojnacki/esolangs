@@ -1,10 +1,10 @@
-use assert_cmd::Command;
+use util::bf;
+
+mod util;
 
 #[test]
 fn file_can_be_used_as_input() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-f")
+    bf().arg("-f")
         .arg("specs/cat.code.bf")
         .write_stdin("Hello, world!")
         .assert()
@@ -14,9 +14,7 @@ fn file_can_be_used_as_input() {
 
 #[test]
 fn code_can_be_used_as_input() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-c")
+    bf().arg("-c")
         .arg(",[.,]")
         .write_stdin("Hello, world!")
         .assert()
@@ -26,9 +24,7 @@ fn code_can_be_used_as_input() {
 
 #[test]
 fn stdin_can_be_used_as_input() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-s")
+    bf().arg("-s")
         .write_stdin(",[.,]!Hello, world!")
         .assert()
         .success()
@@ -37,29 +33,15 @@ fn stdin_can_be_used_as_input() {
 
 #[test]
 fn file_arg_requires_value() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-f")
-        .assert()
-        .failure();
+    bf().arg("-f").assert().failure();
 }
 
 #[test]
 fn code_arg_requires_value() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-c")
-        .assert()
-        .failure();
+    bf().arg("-c").assert().failure();
 }
 
 #[test]
 fn input_methods_are_mutually_exclusive() {
-    Command::cargo_bin("bf")
-        .unwrap()
-        .arg("-s")
-        .arg("-c")
-        .arg(",[.,]")
-        .assert()
-        .failure();
+    bf().arg("-s").arg("-c").arg(",[.,]").assert().failure();
 }

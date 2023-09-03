@@ -1,9 +1,11 @@
-use assert_cmd::Command;
 use std::fs;
+use util::bf;
+
+mod util;
 
 fn run_spec(name: &'static str) {
     let root = format!("specs/{name}");
-    let mut command = Command::cargo_bin("bf").unwrap();
+    let mut command = bf();
     command.arg("-f").arg(format!("{root}.code.bf"));
     if let Ok(input) = fs::read_to_string(format!("{root}.in.txt")) {
         command.write_stdin(input);
