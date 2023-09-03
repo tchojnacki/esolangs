@@ -1,21 +1,13 @@
-mod ast;
-mod emitter;
-mod instruction;
-mod lexer;
-mod optimizer;
-mod parser;
-pub mod util;
-mod vm;
+use backend::{emitter::emit, instruction::Program, optimizer::optimize};
+use frontend::{lexer::tokenize, parser::parse};
 
-use emitter::emit;
-use instruction::Program;
-use lexer::tokenize;
-use optimizer::optimize;
-use parser::parse;
+mod backend;
+mod frontend;
+pub mod util;
 
 pub use {
-    parser::ParseError,
-    vm::{RuntimeError, VirtualMachine},
+    backend::vm::{RuntimeError, VirtualMachine},
+    frontend::parser::ParseError,
 };
 
 pub fn compile(code: &str, optimization: bool) -> Result<Program, ParseError> {

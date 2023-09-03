@@ -1,6 +1,6 @@
 use crate::{
-    ast::{Node, Tree},
-    instruction::{Instruction, Program},
+    backend::instruction::{Instruction, Program},
+    frontend::ast::{Node, Tree},
 };
 
 #[must_use]
