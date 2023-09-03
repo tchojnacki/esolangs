@@ -1,6 +1,6 @@
 use crate::{
     instruction::{Instruction, Program},
-    util::{read_u8, write_u8},
+    util::{read_byte, write_byte},
 };
 use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
@@ -67,13 +67,13 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
                 }
             }
             I::Input => {
-                match read_u8(&mut self.read) {
+                match read_byte(&mut self.read) {
                     Some(value) => self.memory[self.pointer] = value,
                     None => return Some(Err(RuntimeError::InputError)),
                 };
             }
             I::Output => {
-                let Some(()) = write_u8(&mut self.write, self.memory[self.pointer]) else {
+                let Some(()) = write_byte(&mut self.write, self.memory[self.pointer]) else {
                     return Some(Err(RuntimeError::OutputError))
                 };
             }

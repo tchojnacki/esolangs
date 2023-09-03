@@ -1,4 +1,4 @@
-use brainfuck::read_u8;
+use brainfuck::util::read_byte;
 use clap::Parser;
 use std::{fs, io::stdin, path::PathBuf};
 
@@ -33,7 +33,7 @@ impl Input {
                 let mut input = stdin().lock();
                 let mut output = String::new();
                 loop {
-                    match read_u8(&mut input) {
+                    match read_byte(&mut input) {
                         Some(0) | Some(b'!') => break,
                         Some(byte) => output.push(byte as char),
                         None => {
