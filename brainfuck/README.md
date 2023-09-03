@@ -26,7 +26,11 @@ bf -c "++>+++++[<+>-]++++++++[<++++++>-]<."
 ### Library
 
 ```Rust
-let program = compile("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.", true);
+let program = compile(
+  "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.",
+  true
+).expect("Parse error!");
+
 VirtualMachine::new_std(program).run_all().unwrap();
 ```
 

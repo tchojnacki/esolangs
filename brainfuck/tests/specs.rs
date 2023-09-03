@@ -15,37 +15,37 @@ fn run_spec(name: &'static str) {
 }
 
 #[test]
-fn add_works() {
+fn add_spec() {
     run_spec("add")
 }
 
 #[test]
-fn cat_works() {
+fn cat_spec() {
     run_spec("cat")
 }
 
 #[test]
-fn even_works() {
+fn even_spec() {
     run_spec("even")
 }
 
 #[test]
-fn fibonacci_works() {
+fn fibonacci_spec() {
     run_spec("fibonacci")
 }
 
 #[test]
-fn hello_golf_works() {
+fn hello_golf_spec() {
     run_spec("hello-golf")
 }
 
 #[test]
-fn hello_normal_works() {
+fn hello_normal_spec() {
     run_spec("hello-normal")
 }
 
 #[ignore = "this is currently too slow"]
 #[test]
-fn mandelbrot_works() {
+fn mandelbrot_spec() {
     run_spec("mandelbrot")
 }
