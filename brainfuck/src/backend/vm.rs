@@ -40,6 +40,11 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
     }
 
     #[must_use]
+    fn cell(&mut self) -> &mut u8 {
+        &mut self.memory[self.pointer]
+    }
+
+    #[must_use]
     fn step(&mut self) -> Option<Result<(), RuntimeError>> {
         let instruction = *self.program.get(self.pc)?;
         self.pc += 1;
@@ -51,29 +56,30 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
                     (self.pointer as i32 + offset).rem_euclid(self.memory.len() as i32) as usize;
             }
             I::MutCell(offset) => {
-                self.memory[self.pointer] = self.memory[self.pointer].wrapping_add_signed(offset);
+                *self.cell() = self.cell().wrapping_add_signed(offset);
             }
             I::SetCell(value) => {
-                self.memory[self.pointer] = value;
+                *self.cell() = value;
             }
             I::RelJumpRightZero(offset) => {
-                if self.memory[self.pointer] == 0 {
+                if *self.cell() == 0 {
                     self.pc += offset as usize;
                 }
             }
             I::RelJumpLeftNotZero(offset) => {
-                if self.memory[self.pointer] != 0 {
+                if *self.cell() != 0 {
                     self.pc -= offset as usize;
                 }
             }
             I::Input => {
                 match read_byte(&mut self.read) {
-                    Some(value) => self.memory[self.pointer] = value,
+                    Some(value) => *self.cell() = value,
                     None => return Some(Err(RuntimeError::InputError)),
                 };
             }
             I::Output => {
-                let Some(()) = write_byte(&mut self.write, self.memory[self.pointer]) else {
+                let value = *self.cell();
+                let Some(()) = write_byte(&mut self.write, value) else {
                     return Some(Err(RuntimeError::OutputError))
                 };
             }
@@ -168,5 +174,21 @@ mod tests {
         )
     }
 
-    // TODO: better tests
+    #[test]
+    fn mut_pointer_wraps_around() {
+        let mut vm = VirtualMachine::new_std(vec![I::MutPointer(-1)]);
+        vm.run_all().unwrap();
+        assert_eq!(vm.pointer, 29_999);
+    }
+
+    #[test]
+    fn mut_cell_reaches_all_values() {
+        let mut vm =
+            VirtualMachine::new_std(vec![I::MutCell(127), I::SetCell(0), I::MutCell(-128)]);
+        vm.step().unwrap().unwrap();
+        assert_eq!(*vm.cell(), 127);
+        vm.step().unwrap().unwrap();
+        vm.step().unwrap().unwrap();
+        assert_eq!(*vm.cell(), 128);
+    }
 }

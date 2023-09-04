@@ -28,4 +28,38 @@ pub fn emit(ast: &Tree) -> Program {
     result
 }
 
-// TODO: tests
+#[cfg(test)]
+mod tests {
+    use super::{emit, Instruction as I, Node as N};
+
+    #[test]
+    fn emits_correct_loop_offsets() {
+        assert_eq!(
+            emit(&vec![N::Loop(vec![N::Decrement].into_boxed_slice())].into_boxed_slice()),
+            vec![
+                I::RelJumpRightZero(2),
+                I::MutCell(-1),
+                I::RelJumpLeftNotZero(2)
+            ]
+        );
+    }
+
+    #[test]
+    fn handles_nested_loops() {
+        assert_eq!(
+            emit(
+                &vec![N::Loop(
+                    vec![N::Loop(vec![N::Decrement].into_boxed_slice())].into_boxed_slice()
+                )]
+                .into_boxed_slice()
+            ),
+            vec![
+                I::RelJumpRightZero(4),
+                I::RelJumpRightZero(2),
+                I::MutCell(-1),
+                I::RelJumpLeftNotZero(2),
+                I::RelJumpLeftNotZero(4)
+            ]
+        );
+    }
+}

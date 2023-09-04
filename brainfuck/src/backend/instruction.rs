@@ -1,5 +1,5 @@
 #[must_use]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Instruction {
     MutPointer(i32),
     MutCell(i8),
