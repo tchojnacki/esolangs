@@ -1,13 +1,15 @@
 use args::Arguments;
-use brainfuck::{compile, ParseError, RuntimeError, VirtualMachine};
+use brainfuck::{compile, VirtualMachine};
 use clap::Parser;
 use colored::Colorize;
+use errors::BfError;
 use std::{
     io::{stdin, stdout},
     process::ExitCode,
 };
 
 mod args;
+mod errors;
 mod input;
 
 fn main() -> ExitCode {
@@ -23,16 +25,7 @@ fn main() -> ExitCode {
 fn run() -> Result<(), String> {
     let args = Arguments::parse();
     let source = args.input.get_source()?;
-    let program = compile(&source, true).map_err(|err| match err {
-        ParseError::UnexpectedLoopEnd => "ParseError: Unexpected loop end (found ']').",
-        ParseError::MissingLoopEnd => "ParseError: Missing loop end (found EOF).",
-    })?;
+    let program = compile(&source, true).map_err(|e| e.message(&source))?;
     let mut vm = VirtualMachine::new(program, 30_000, stdin(), stdout());
-    vm.run_all().map_err(|err| {
-        match err {
-            RuntimeError::InputError => "RuntimeError: Could not read from input.",
-            RuntimeError::OutputError => "RuntimeError: Could not write to output.",
-        }
-        .to_owned()
-    })
+    vm.run_all().map_err(|e| e.message(&source))
 }

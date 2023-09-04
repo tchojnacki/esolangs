@@ -38,9 +38,7 @@ VirtualMachine::new_std(program).run_all().unwrap();
 
 - Customizable wrapping.
 - Customizable tape length.
-- Customizable EOF behaviour.
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in code optimizer.
-- Better error messages.
 
 [^1]: [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)

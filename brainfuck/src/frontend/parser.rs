@@ -1,12 +1,12 @@
 use crate::frontend::{
     ast::{Node, Tree},
-    lexer::Token,
+    token::{Token, TokenKind},
 };
 
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum ParseError {
-    UnexpectedLoopEnd,
+    UnexpectedLoopEnd(usize),
     MissingLoopEnd,
 }
 
@@ -25,21 +25,21 @@ fn parse_proc(
     tokens: &mut impl Iterator<Item = Token>,
     context: Context,
 ) -> Result<Tree, ParseError> {
-    use {Context as C, Node as N, ParseError as E, Token as T};
+    use {Context as C, Node as N, ParseError as E, TokenKind as TK};
     let mut result = Vec::new();
     while let Some(token) = tokens.next() {
-        result.push(match token {
-            T::Right => N::Right,
-            T::Left => N::Left,
-            T::Increment => N::Increment,
-            T::Decrement => N::Decrement,
-            T::Output => N::Output,
-            T::Input => N::Input,
-            T::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop)?),
-            T::EndLoop => {
+        result.push(match token.kind {
+            TK::Right => N::Right,
+            TK::Left => N::Left,
+            TK::Increment => N::Increment,
+            TK::Decrement => N::Decrement,
+            TK::Output => N::Output,
+            TK::Input => N::Input,
+            TK::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop)?),
+            TK::EndLoop => {
                 return match context {
                     C::InsideLoop => Ok(result.into()),
-                    C::Root => Err(E::UnexpectedLoopEnd),
+                    C::Root => Err(E::UnexpectedLoopEnd(token.pos)),
                 }
             }
         });
@@ -52,10 +52,19 @@ fn parse_proc(
 
 #[cfg(test)]
 mod tests {
-    use super::{parse, Node as N, ParseError, Token as T};
+    use super::{parse, Node as N, ParseError, Token, TokenKind as TK};
 
-    fn assert_parses(input: &[T], expected: &[N]) {
-        assert_eq!(parse(input.iter().copied()).as_deref(), Ok(expected))
+    fn assert_parses(input: &[TK], expected: &[N]) {
+        assert_eq!(
+            parse(
+                input
+                    .iter()
+                    .enumerate()
+                    .map(|(pos, &kind)| Token { kind, pos })
+            )
+            .as_deref(),
+            Ok(expected)
+        )
     }
 
     #[test]
@@ -66,7 +75,7 @@ mod tests {
     #[test]
     fn parses_cat() {
         assert_parses(
-            &[T::Input, T::StartLoop, T::Output, T::Input, T::EndLoop],
+            &[TK::Input, TK::StartLoop, TK::Output, TK::Input, TK::EndLoop],
             &[N::Input, N::Loop(Box::new([N::Output, N::Input]))],
         )
     }
@@ -74,7 +83,7 @@ mod tests {
     #[test]
     fn parses_nested_loops() {
         assert_parses(
-            &[T::StartLoop, T::StartLoop, T::EndLoop, T::EndLoop],
+            &[TK::StartLoop, TK::StartLoop, TK::EndLoop, TK::EndLoop],
             &[N::Loop(Box::new([N::Loop(Box::new([]))]))],
         )
     }
@@ -82,15 +91,43 @@ mod tests {
     #[test]
     fn errors_on_unexpected_loop_end() {
         assert_eq!(
-            parse([T::Increment, T::EndLoop].into_iter()),
-            Err(ParseError::UnexpectedLoopEnd)
+            parse(
+                [
+                    Token {
+                        kind: TK::Increment,
+                        pos: 0
+                    },
+                    Token {
+                        kind: TK::EndLoop,
+                        pos: 1
+                    }
+                ]
+                .into_iter()
+            ),
+            Err(ParseError::UnexpectedLoopEnd(1))
         )
     }
 
     #[test]
     fn errors_on_missing_loop_end() {
         assert_eq!(
-            parse([T::StartLoop, T::Input, T::Increment].into_iter()),
+            parse(
+                [
+                    Token {
+                        kind: TK::StartLoop,
+                        pos: 0
+                    },
+                    Token {
+                        kind: TK::Input,
+                        pos: 2
+                    },
+                    Token {
+                        kind: TK::Increment,
+                        pos: 3
+                    }
+                ]
+                .into_iter()
+            ),
             Err(ParseError::MissingLoopEnd)
         )
     }

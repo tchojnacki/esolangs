@@ -11,7 +11,7 @@ pub use {
 };
 
 pub fn compile(code: &str, optimization: bool) -> Result<Program, ParseError> {
-    let tokens = tokenize(code.chars());
+    let tokens = tokenize(code);
     let ast = parse(tokens)?;
     let program = emit(&ast);
     Ok(match optimization {
