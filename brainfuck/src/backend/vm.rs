@@ -1,5 +1,8 @@
 use crate::{
-    backend::instruction::{Instruction, Program},
+    backend::{
+        instruction::{Instruction, Program},
+        settings::Settings,
+    },
     util::{read_byte, write_byte},
 };
 use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
@@ -17,23 +20,25 @@ pub struct VirtualMachine<R: Read, W: Write> {
     pc: usize,
     pointer: usize,
     memory: Box<[u8]>,
+    settings: Settings,
     read: R,
     write: W,
 }
 
 impl VirtualMachine<Stdin, Stdout> {
     pub fn new_std(program: Program) -> Self {
-        Self::new(program, 30_000, stdin(), stdout())
+        Self::new(program, Settings::default(), stdin(), stdout())
     }
 }
 
 impl<R: Read, W: Write> VirtualMachine<R, W> {
-    pub fn new(program: Program, tape_length: usize, read: R, write: W) -> Self {
+    pub fn new(program: Program, settings: Settings, read: R, write: W) -> Self {
         Self {
             program,
             pc: 0,
             pointer: 0,
-            memory: vec![0; tape_length].into_boxed_slice(),
+            memory: vec![0; settings.tape_length as usize].into_boxed_slice(),
+            settings,
             read,
             write,
         }
@@ -97,11 +102,12 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Instruction as I, Program, VirtualMachine};
+    use super::{Instruction as I, Program, Settings, VirtualMachine};
 
     fn assert_interpret(program: Program, input: &str, output: &str) {
         let mut buffer = Vec::new();
-        let mut vm = VirtualMachine::new(program, 30_000, input.as_bytes(), &mut buffer);
+        let mut vm =
+            VirtualMachine::new(program, Settings::default(), input.as_bytes(), &mut buffer);
         let res = vm.run_all();
         assert_eq!(res, Ok(()));
         assert_eq!(buffer, output.as_bytes());
