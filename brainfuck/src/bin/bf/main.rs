@@ -1,14 +1,15 @@
 use args::Arguments;
-use brainfuck::{compile, Settings, VirtualMachine};
+use brainfuck::{compile, VirtualMachine};
 use clap::Parser;
 use colored::Colorize;
-use errors::BfError;
+use errors::CliError;
 use std::{
     io::{stdin, stdout},
     process::ExitCode,
 };
 
 mod args;
+mod conventions;
 mod errors;
 mod input;
 
@@ -24,8 +25,9 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), String> {
     let args = Arguments::parse();
+    let settings = args.conventions.into();
     let source = args.input.get_source()?;
-    let program = compile(&source, &Settings::default()).map_err(|e| e.message(&source))?;
-    let mut vm = VirtualMachine::new(program, Settings::default(), stdin(), stdout());
-    vm.run_all().map_err(|e| e.message(&source))
+    let program = compile(&source, &settings).map_err(|e| e.message(&source))?;
+    let mut vm = VirtualMachine::new(program, settings, stdin(), stdout());
+    vm.run().map_err(|e| e.message(&source))
 }

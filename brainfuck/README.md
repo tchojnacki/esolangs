@@ -6,12 +6,14 @@
 
 - Fully implemented lexer, parser, bytecode generator and interpreter.
 - Can be used as a binary or library.
-- Unit and integration test coverage.
+- Covered by unit and integration tests.
 - Reading code from file, as an argument or from stdin.
-- Implementation choices:
-  - Cell size: 8 bit unsigned (with wrapping)
-  - Cell count: 30 000 (with wrapping)
+- Conventions:
   - Starting cell index: 0
+  - Cell size: 8 bit unsigned
+  - Cell overflow: wrapping (customizable)
+  - Tape length: 30 000 (customizable)
+  - Tape overflow: wrapping (customizable)
 
 ## Examples
 
@@ -27,14 +29,14 @@ bf -c "++>+++++[<+>-]++++++++[<++++++>-]<."
 
 ```Rust
 let program = compile_debug("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.").expect("Parse error!");
-VirtualMachine::new_std(program).run_all().unwrap();
+VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 ```
 
 ## TODO
 
-- Customizable wrapping.
-- Customizable tape length.
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
 - Built-in code optimizer.
+- Other targets (WASM, JIT).
+- Documentation for public API.
 
 [^1]: [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)
