@@ -4,7 +4,7 @@
 
 ## Features
 
-- Fully implemented lexer, parser, bytecode generator and interpreter.
+- Fully implemented lexer, parser, bytecode generator, optimizer and interpreter.
 - Can be used as a binary or library.
 - Covered by unit and integration tests.
 - Reading code from file, as an argument or from stdin.
@@ -35,7 +35,6 @@ VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 ## TODO
 
 - Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
-- Built-in code optimizer.
 - Other targets (WASM, JIT).
 - Documentation for public API.
 
