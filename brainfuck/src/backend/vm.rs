@@ -62,39 +62,32 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
     fn exec(&mut self, instruction: Instruction) -> Result<(), RuntimeError> {
         use Instruction as I;
         match instruction {
-            I::MutPointer(offset) => {
-                let new = self.pointer as i32 + offset;
-                if self.settings.strict() && (new < 0 || new >= self.memory.len() as i32) {
-                    return Err(RuntimeError::TapeOverflow {
+            I::MutPointer(change) => {
+                self.pointer = self.settings.mut_pointer(self.pointer, change).ok_or(
+                    RuntimeError::TapeOverflow {
                         from: self.pointer,
-                        by: offset,
-                    });
-                }
-                self.pointer = new.rem_euclid(self.memory.len() as i32) as usize;
+                        by: change,
+                    },
+                )?;
             }
-            I::MutCell(offset) => {
-                if self.settings.strict() {
-                    *self.c() =
-                        self.c()
-                            .checked_add_signed(offset)
-                            .ok_or(RuntimeError::CellOverflow {
-                                at: self.pointer,
-                                from: *self.c(),
-                                by: offset,
-                            })?;
-                } else {
-                    *self.c() = self.c().wrapping_add_signed(offset);
-                }
+            I::MutCell(change) => {
+                let previous = *self.c();
+                *self.c() =
+                    self.settings
+                        .mut_cell(previous, change)
+                        .ok_or(RuntimeError::CellOverflow {
+                            at: self.pointer,
+                            from: *self.c(),
+                            by: change,
+                        })?;
             }
-            I::SetCell(value) => {
-                *self.c() = value;
-            }
-            I::RelJumpRightZero(offset) => {
+            I::SetCell(value) => *self.c() = value,
+            I::JumpRightZ(offset) => {
                 if *self.c() == 0 {
                     self.pc += offset as usize;
                 }
             }
-            I::RelJumpLeftNotZero(offset) => {
+            I::JumpLeftNz(offset) => {
                 if *self.c() != 0 {
                     self.pc -= offset as usize;
                 }
@@ -148,10 +141,10 @@ mod tests {
         assert_interpret(
             vec![
                 I::Input,
-                I::RelJumpRightZero(3),
+                I::JumpRightZ(3),
                 I::Output,
                 I::Input,
-                I::RelJumpLeftNotZero(3),
+                I::JumpLeftNz(3),
             ],
             "Hello, world!",
             "Hello, world!",
@@ -195,9 +188,9 @@ mod tests {
         assert_interpret(
             vec![
                 I::Input,
-                I::RelJumpRightZero(2),
+                I::JumpRightZ(2),
                 I::MutCell(-1),
-                I::RelJumpLeftNotZero(2),
+                I::JumpLeftNz(2),
                 I::Output,
             ],
             "X",

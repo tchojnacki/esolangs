@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use self::jumps::JumpStack;
+use self::builder::Builder;
 use crate::{
     backend::instruction::{Instruction as I, Program},
     Settings,
@@ -13,72 +13,72 @@ pub fn optimize(program: Program, settings: &Settings) -> Program {
 }
 
 fn merge_muts(input: Program, settings: &Settings) -> Program {
+    if settings.strict() {
+        return input;
+    }
+
     let mut input = input.into_iter().peekable();
-    let mut jump_stack = JumpStack::default();
-    let mut result = Vec::with_capacity(input.len());
+    let mut builder = Builder::with_capacity(input.len());
 
     while let Some(instr) = input.next() {
         match instr {
             I::MutPointer(mut value) => {
-                while let Some(I::MutPointer(next_value)) = input.peek().copied() {
-                    let _ = input.next().unwrap();
-                    value = (value + next_value).rem_euclid(settings.tape_length() as i32);
-                    jump_stack.change(-1);
+                builder.omit(1);
+                while let Some(I::MutPointer(_)) = input.peek() {
+                    builder.omit(1);
+                    value = (value + input.next().unwrap().unwrap_mut_pointer())
+                        .rem_euclid(settings.tape_length() as i32);
                 }
-                result.push(I::MutPointer(value));
+                builder.include(I::MutPointer(value));
             }
             I::MutCell(mut value) => {
-                while let Some(I::MutCell(next_value)) = input.peek().copied() {
-                    let _ = input.next().unwrap();
-                    value = value.wrapping_add(next_value);
-                    jump_stack.change(-1);
+                builder.omit(1);
+                while let Some(I::MutCell(_)) = input.peek() {
+                    builder.omit(1);
+                    value = value.wrapping_add(input.next().unwrap().unwrap_mut_cell());
                 }
-                result.push(I::MutCell(value));
+                builder.include(I::MutCell(value));
             }
-            other => jump_stack.visit(&mut result, other),
+            other => builder.preserve(other),
         }
     }
 
-    result
+    builder.build()
 }
 
 fn create_sets(input: Program, settings: &Settings) -> Program {
-    let mut jump_stack = JumpStack::default();
-    let mut result = Vec::with_capacity(input.len());
+    let mut builder = Builder::with_capacity(input.len());
     let mut queue = VecDeque::with_capacity(3);
 
     for instr in input {
         if queue.len() == 3 {
-            jump_stack.visit(&mut result, queue.pop_front().unwrap());
+            builder.preserve(queue.pop_front().unwrap());
         }
         queue.push_back(instr);
 
         if queue.len() == 3 {
-            if let (I::RelJumpRightZero(_), I::MutCell(value), I::RelJumpLeftNotZero(_)) =
+            if let (I::JumpRightZ(_), I::MutCell(value), I::JumpLeftNz(_)) =
                 (queue[0], queue[1], queue[2])
             {
+                queue.clear();
+                builder.omit(3);
                 if value == 1 && settings.strict() {
-                    queue.clear();
-                    result.push(I::SetCell(255));
-                    result.push(I::MutCell(1));
-                    jump_stack.change(-1);
+                    return builder.overflow();
                 } else if value == -1 || value == 1 {
-                    queue.clear();
-                    result.push(I::SetCell(0));
-                    jump_stack.change(-2);
+                    builder.include(I::SetCell(0));
                 }
             }
         }
     }
 
     while let Some(instr) = queue.pop_front() {
-        jump_stack.visit(&mut result, instr);
+        builder.preserve(instr);
     }
 
-    result
+    builder.build()
 }
 
-mod jumps {
+mod builder {
     use super::{Program, I};
 
     struct JumpEntry {
@@ -93,32 +93,58 @@ mod jumps {
         }
     }
 
-    #[derive(Default)]
-    pub struct JumpStack(Vec<JumpEntry>);
+    pub struct Builder {
+        jumps: Vec<JumpEntry>,
+        result: Vec<I>,
+    }
 
-    impl JumpStack {
-        pub fn visit(&mut self, program: &mut Program, instr: I) {
-            program.push(instr);
-            let last = program.len() - 1;
+    impl Builder {
+        pub fn with_capacity(capacity: usize) -> Self {
+            Self {
+                jumps: Vec::new(),
+                result: Vec::with_capacity(capacity),
+            }
+        }
+
+        pub fn preserve(&mut self, instr: I) {
+            self.result.push(instr);
+            let last = self.result.len() - 1;
             match instr {
-                I::RelJumpRightZero(jump) => self.0.push(JumpEntry {
-                    index: program.len() - 1,
+                I::JumpRightZ(jump) => self.jumps.push(JumpEntry {
+                    index: last,
                     jump,
                     changed: 0,
                 }),
-                I::RelJumpLeftNotZero(_) => {
-                    let entry = self.0.pop().unwrap();
-                    program[entry.index] = I::RelJumpRightZero(entry.new_jump());
-                    program[last] = I::RelJumpLeftNotZero(entry.new_jump());
+                I::JumpLeftNz(_) => {
+                    let entry = self.jumps.pop().unwrap();
+                    self.result[entry.index] = I::JumpRightZ(entry.new_jump());
+                    self.result[last] = I::JumpLeftNz(entry.new_jump());
                 }
                 _ => (),
             }
         }
 
-        pub fn change(&mut self, by: i32) {
-            for entry in &mut self.0 {
-                entry.changed += by;
+        pub fn include(&mut self, instr: I) {
+            self.result.push(instr);
+            for entry in &mut self.jumps {
+                entry.changed += 1;
             }
+        }
+
+        pub fn omit(&mut self, count: usize) {
+            for entry in &mut self.jumps {
+                entry.changed -= count as i32;
+            }
+        }
+
+        pub fn build(self) -> Program {
+            self.result
+        }
+
+        pub fn overflow(mut self) -> Program {
+            self.result.push(I::SetCell(255));
+            self.result.push(I::MutCell(1));
+            self.result
         }
     }
 }
@@ -156,20 +182,20 @@ mod tests {
         assert_eq!(
             optimize(
                 vec![
-                    I::RelJumpRightZero(5),
+                    I::JumpRightZ(5),
                     I::MutCell(3),
                     I::MutCell(5),
                     I::MutCell(-2),
                     I::MutPointer(1),
-                    I::RelJumpLeftNotZero(5)
+                    I::JumpLeftNz(5)
                 ],
                 &Settings::default()
             ),
             vec![
-                I::RelJumpRightZero(3),
+                I::JumpRightZ(3),
                 I::MutCell(6),
                 I::MutPointer(1),
-                I::RelJumpLeftNotZero(3)
+                I::JumpLeftNz(3)
             ]
         )
     }
@@ -180,10 +206,10 @@ mod tests {
             optimize(
                 vec![
                     I::MutPointer(5),
-                    I::RelJumpRightZero(3),
+                    I::JumpRightZ(3),
                     I::MutCell(3),
                     I::MutCell(-4),
-                    I::RelJumpLeftNotZero(3),
+                    I::JumpLeftNz(3),
                     I::MutPointer(-5)
                 ],
                 &Settings::default()
@@ -193,14 +219,25 @@ mod tests {
     }
 
     #[test]
+    fn optimizes_creates_sets_in_strict() {
+        assert_eq!(
+            optimize(
+                vec![I::JumpRightZ(3), I::MutCell(-1), I::JumpLeftNz(3)],
+                &Settings::default_strict()
+            ),
+            vec![I::SetCell(0)]
+        )
+    }
+
+    #[test]
     fn optimizes_preserves_overflow_in_strict() {
         assert_eq!(
             optimize(
                 vec![
-                    I::RelJumpRightZero(3),
-                    I::MutCell(4),
-                    I::MutCell(-3),
-                    I::RelJumpLeftNotZero(3),
+                    I::JumpRightZ(3),
+                    I::MutCell(1),
+                    I::JumpLeftNz(3),
+                    I::MutPointer(3)
                 ],
                 &Settings::default_strict()
             ),

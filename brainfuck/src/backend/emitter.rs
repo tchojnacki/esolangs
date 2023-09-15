@@ -19,9 +19,9 @@ pub fn emit(ast: &Tree) -> Program {
                 let mut subcode = emit(subtree);
                 let jump = subcode.len() as u32 + 1;
 
-                result.push(I::RelJumpRightZero(jump));
+                result.push(I::JumpRightZ(jump));
                 result.append(&mut subcode);
-                result.push(I::RelJumpLeftNotZero(jump));
+                result.push(I::JumpLeftNz(jump));
             }
         };
     }
@@ -36,11 +36,7 @@ mod tests {
     fn emits_correct_loop_offsets() {
         assert_eq!(
             emit(&vec![N::Loop(vec![N::Decrement].into_boxed_slice())].into_boxed_slice()),
-            vec![
-                I::RelJumpRightZero(2),
-                I::MutCell(-1),
-                I::RelJumpLeftNotZero(2)
-            ]
+            vec![I::JumpRightZ(2), I::MutCell(-1), I::JumpLeftNz(2)]
         );
     }
 
@@ -54,11 +50,11 @@ mod tests {
                 .into_boxed_slice()
             ),
             vec![
-                I::RelJumpRightZero(4),
-                I::RelJumpRightZero(2),
+                I::JumpRightZ(4),
+                I::JumpRightZ(2),
                 I::MutCell(-1),
-                I::RelJumpLeftNotZero(2),
-                I::RelJumpLeftNotZero(4)
+                I::JumpLeftNz(2),
+                I::JumpLeftNz(4)
             ]
         );
     }
