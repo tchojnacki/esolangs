@@ -1,15 +1,15 @@
-use std::collections::VecDeque;
-
 use self::builder::Builder;
 use crate::{
     backend::instruction::{Instruction as I, Program},
     Settings,
 };
+use std::{collections::VecDeque, mem};
 
 #[must_use]
 pub fn optimize(program: Program, settings: &Settings) -> Program {
     let program = merge_muts(program, settings);
-    create_sets(program, settings)
+    let program = create_sets(program, settings);
+    reduce_cell_chains(program, settings)
 }
 
 fn merge_muts(input: Program, settings: &Settings) -> Program {
@@ -74,6 +74,85 @@ fn create_sets(input: Program, settings: &Settings) -> Program {
     while let Some(instr) = queue.pop_front() {
         builder.preserve(instr);
     }
+
+    builder.build()
+}
+
+fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
+    let mut builder = Builder::with_capacity(input.len());
+    let mut chain = (None, Vec::new());
+
+    let include_all_changes = |builder: &mut Builder, changes: &[i8]| {
+        for change in changes {
+            if *change != 0 {
+                builder.include(I::MutCell(*change));
+            }
+        }
+    };
+
+    let change_value = |mut value: u8, changes: &[i8]| {
+        for change in changes {
+            if let Some(new) = settings.mut_cell(value, *change) {
+                value = new;
+            } else {
+                return Err(());
+            }
+        }
+        Ok(value)
+    };
+
+    macro_rules! finish_chain {
+        () => {
+            let (set, changes) = mem::take(&mut chain);
+            match set {
+                Some(value) => match change_value(value, &changes) {
+                    Ok(new) => builder.include(I::SetCell(new)),
+                    Err(_) => return builder.overflow(),
+                },
+                None => {
+                    if settings.strict() {
+                        include_all_changes(&mut builder, &changes);
+                    } else {
+                        let value = changes
+                            .iter()
+                            .fold(0i8, |acc, &change| acc.wrapping_add(change));
+                        if value != 0 {
+                            builder.include(I::MutCell(value));
+                        }
+                    }
+                }
+            };
+        };
+    }
+
+    for instr in input {
+        match instr {
+            I::SetCell(value) => {
+                builder.omit(1);
+                if settings.strict() {
+                    match chain.0 {
+                        Some(value) => {
+                            if change_value(value, &chain.1).is_err() {
+                                return builder.overflow();
+                            }
+                        }
+                        None => include_all_changes(&mut builder, &chain.1),
+                    }
+                }
+                chain = (Some(value), Vec::new());
+            }
+            I::MutCell(change) => {
+                builder.omit(1);
+                chain.1.push(change);
+            }
+            other => {
+                finish_chain!();
+                builder.preserve(other);
+            }
+        }
+    }
+
+    finish_chain!();
 
     builder.build()
 }
@@ -152,9 +231,10 @@ mod builder {
 #[cfg(test)]
 mod tests {
     use super::{optimize, Settings, I};
+    use test_case::test_case;
 
     #[test]
-    fn optimize_combines_mut_cells() {
+    fn merges_mut_cells_without_strict() {
         assert_eq!(
             optimize(
                 vec![I::MutCell(3), I::MutCell(127), I::MutCell(-128)],
@@ -178,22 +258,34 @@ mod tests {
     }
 
     #[test]
-    fn optimize_correctly_edits_jumps() {
+    fn does_not_merge_mut_cells_with_strict() {
+        assert_eq!(
+            optimize(
+                vec![I::SetCell(250), I::MutCell(10), I::MutCell(-9)],
+                &Settings::default_strict()
+            ),
+            vec![I::SetCell(255), I::MutCell(1)]
+        )
+    }
+
+    #[test_case(Settings::default(); "without strict")]
+    #[test_case(Settings::default_strict(); "with strict")]
+    fn edits_jumps(settings: Settings) {
         assert_eq!(
             optimize(
                 vec![
                     I::JumpRightZ(5),
-                    I::MutCell(3),
-                    I::MutCell(5),
-                    I::MutCell(-2),
+                    I::SetCell(1),
+                    I::SetCell(2),
+                    I::SetCell(3),
                     I::MutPointer(1),
                     I::JumpLeftNz(5)
                 ],
-                &Settings::default()
+                &settings
             ),
             vec![
                 I::JumpRightZ(3),
-                I::MutCell(6),
+                I::SetCell(3),
                 I::MutPointer(1),
                 I::JumpLeftNz(3)
             ]
@@ -201,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn optimize_creates_sets() {
+    fn merges_and_creates_sets_without_stricts() {
         assert_eq!(
             optimize(
                 vec![
@@ -218,19 +310,20 @@ mod tests {
         )
     }
 
-    #[test]
-    fn optimizes_creates_sets_in_strict() {
+    #[test_case(Settings::default(); "without strict")]
+    #[test_case(Settings::default_strict(); "with strict")]
+    fn creates_sets(settings: Settings) {
         assert_eq!(
             optimize(
                 vec![I::JumpRightZ(3), I::MutCell(-1), I::JumpLeftNz(3)],
-                &Settings::default_strict()
+                &settings
             ),
             vec![I::SetCell(0)]
         )
     }
 
     #[test]
-    fn optimizes_preserves_overflow_in_strict() {
+    fn preserves_loop_overflow_with_strict() {
         assert_eq!(
             optimize(
                 vec![
@@ -242,6 +335,38 @@ mod tests {
                 &Settings::default_strict()
             ),
             vec![I::SetCell(255), I::MutCell(1)]
+        )
+    }
+
+    #[test]
+    fn removes_leading_muts_without_strict() {
+        assert_eq!(
+            optimize(
+                vec![
+                    I::MutCell(5),
+                    I::MutCell(-3),
+                    I::SetCell(10),
+                    I::MutCell(-2)
+                ],
+                &Settings::default()
+            ),
+            vec![I::SetCell(8)]
+        )
+    }
+
+    #[test]
+    fn does_not_remove_leading_muts_with_strict() {
+        assert_eq!(
+            optimize(
+                vec![
+                    I::MutCell(5),
+                    I::MutCell(-3),
+                    I::SetCell(10),
+                    I::MutCell(-2)
+                ],
+                &Settings::default_strict()
+            ),
+            vec![I::MutCell(5), I::MutCell(-3), I::SetCell(8)]
         )
     }
 }

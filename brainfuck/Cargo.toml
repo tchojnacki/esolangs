@@ -9,3 +9,4 @@ colored = "2.0.4"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
+test-case = "3.1.0"

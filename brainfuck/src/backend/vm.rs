@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn cat_copies_input() {
+    fn copies_input_with_cat() {
         assert_interpret(
             vec![
                 I::Input,
@@ -152,7 +152,7 @@ mod tests {
     }
 
     #[test]
-    fn decrement_reverses_increment() {
+    fn reverses_increment_with_decrement() {
         assert_interpret(
             vec![
                 I::Input,
@@ -168,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn left_reverses_right() {
+    fn reverses_right_with_left() {
         assert_interpret(
             vec![
                 I::Input,
@@ -184,7 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn loop_zeroes_cell() {
+    fn zeroes_cell_with_loop() {
         assert_interpret(
             vec![
                 I::Input,
@@ -199,14 +199,14 @@ mod tests {
     }
 
     #[test]
-    fn mut_pointer_wraps_around() {
+    fn wraps_around_mut_pointer_without_strict() {
         let mut vm = VirtualMachine::new_std_default(vec![I::MutPointer(-1)]);
         vm.run().unwrap();
         assert_eq!(vm.pointer as u32, Settings::DEFAULT_LENGTH - 1);
     }
 
     #[test]
-    fn mut_cell_reaches_all_values() {
+    fn reaches_all_values_with_mut_cell() {
         let mut vm =
             VirtualMachine::new_std_default(vec![I::MutCell(127), I::SetCell(0), I::MutCell(-128)]);
         vm.step().unwrap().unwrap();
@@ -217,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn cell_overflows_return_error_in_strict_mode() {
+    fn returns_error_on_cell_overflow_with_strict() {
         let mut vm = VirtualMachine::new_std_strict(vec![I::MutCell(-1)]);
         assert_eq!(
             vm.run(),
@@ -230,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn pointer_overflows_return_error_in_strict_mode() {
+    fn returns_error_on_pointer_overflow_with_strict() {
         let mut vm = VirtualMachine::new_std_strict(vec![I::MutPointer(3), I::MutPointer(-5)]);
         assert_eq!(
             vm.run(),
@@ -239,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn wrap_around_works_on_custom_length() {
+    fn wraps_around_custom_tape_length_without_strict() {
         let mut vm = VirtualMachine::new_std(
             vec![I::MutCell(13), I::MutPointer(21)],
             Settings::try_new(21, false).unwrap(),
