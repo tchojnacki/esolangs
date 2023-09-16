@@ -230,8 +230,52 @@ mod builder {
 
 #[cfg(test)]
 mod tests {
-    use super::{optimize, Settings, I};
+    use crate::VirtualMachine;
+
+    use super::{optimize, Program, Settings, I};
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+    use std::ops::RangeBounds;
     use test_case::test_case;
+
+    fn rand_range<T, R>(gen: &mut Gen, range: R) -> T
+    where
+        T: Copy,
+        R: RangeBounds<T> + Iterator<Item = T>,
+    {
+        *gen.choose(&range.collect::<Vec<_>>()).unwrap()
+    }
+
+    #[derive(Clone, Debug)]
+    struct SimpleProgram(Program);
+
+    impl Arbitrary for SimpleProgram {
+        fn arbitrary(gen: &mut Gen) -> Self {
+            let len = rand_range(gen, 0..256);
+            Self(
+                (0..len)
+                    .map(|_| {
+                        let mut_cell = I::MutCell(rand_range(gen, -128..=127));
+                        let mut_pointer = I::MutPointer(rand_range(gen, -100..=100));
+                        let set_cell = I::SetCell(rand_range(gen, 0..=255));
+                        *gen.choose(&[mut_cell, mut_pointer, set_cell]).unwrap()
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        }
+    }
+
+    impl Arbitrary for Settings {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let len = *g.choose(&[3, 10, 100, 256, 1024]).unwrap();
+            g.choose(&[
+                Settings::try_new(len, false).unwrap(),
+                Settings::try_new(len, true).unwrap(),
+            ])
+            .unwrap()
+            .clone()
+        }
+    }
 
     #[test]
     fn merges_mut_cells_without_strict() {
@@ -368,5 +412,28 @@ mod tests {
             ),
             vec![I::MutCell(5), I::MutCell(-3), I::SetCell(8)]
         )
+    }
+
+    #[quickcheck]
+    fn reduces_instruction_count(simple_program: SimpleProgram, settings: Settings) -> bool {
+        let SimpleProgram(program) = simple_program;
+        let optimized = optimize(program.clone(), &settings);
+        program.len() >= optimized.len()
+    }
+
+    #[quickcheck]
+    fn creates_equivalent_code(program: SimpleProgram, settings: Settings) -> bool {
+        let before = program.0;
+        let mut before_vm = VirtualMachine::new_std(before.clone(), settings.clone());
+        let before_res = before_vm.run();
+
+        let after = optimize(before, &settings);
+        let mut after_vm = VirtualMachine::new_std(after, settings);
+        let after_res = after_vm.run();
+
+        match before_res.is_ok() {
+            true => after_res.is_ok() && before_vm.memory() == after_vm.memory(),
+            false => after_res.is_err(),
+        }
     }
 }

@@ -1,4 +1,5 @@
 #[must_use]
+#[derive(Clone, Debug)]
 pub struct Settings {
     tape_length: u32,
     strict: bool,

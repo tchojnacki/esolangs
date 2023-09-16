@@ -9,4 +9,6 @@ colored = "2.0.4"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
 test-case = "3.1.0"

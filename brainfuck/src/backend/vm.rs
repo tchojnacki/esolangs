@@ -54,6 +54,10 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         }
     }
 
+    pub const fn memory(&self) -> &[u8] {
+        &self.memory
+    }
+
     #[must_use]
     fn c(&mut self) -> &mut u8 {
         &mut self.memory[self.pointer]
