@@ -4,4 +4,4 @@ Collection of Rust interpreters for [esoteric programming languages](https://en.
 
 See more details in subfolder READMEs:
 
-- [Brainfuck](./brainfuck/)
+- [Brainfuck](./brainfuck#readme)
