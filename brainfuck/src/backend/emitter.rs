@@ -7,7 +7,7 @@ use crate::{
 pub fn emit(ast: &Tree) -> Program {
     let mut result = Vec::new();
     for node in ast.iter() {
-        use {Instruction as I, Node as N};
+        use self::{Instruction as I, Node as N};
         match node {
             N::Right => result.push(I::MutPointer(1)),
             N::Left => result.push(I::MutPointer(-1)),
@@ -22,7 +22,7 @@ pub fn emit(ast: &Tree) -> Program {
                 result.push(I::JumpRightZ(jump));
                 result.append(&mut subcode);
                 result.push(I::JumpLeftNz(jump));
-            }
+            },
         };
     }
     result

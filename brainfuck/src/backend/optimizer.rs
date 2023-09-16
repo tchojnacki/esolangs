@@ -1,9 +1,10 @@
+use std::{collections::VecDeque, mem};
+
 use self::builder::Builder;
 use crate::{
     backend::instruction::{Instruction as I, Program},
     Settings,
 };
-use std::{collections::VecDeque, mem};
 
 #[must_use]
 pub fn optimize(program: Program, settings: &Settings) -> Program {
@@ -30,7 +31,7 @@ fn merge_muts(input: Program, settings: &Settings) -> Program {
                         .rem_euclid(settings.tape_length() as i32);
                 }
                 builder.include(I::MutPointer(value));
-            }
+            },
             I::MutCell(mut value) => {
                 builder.omit(1);
                 while let Some(I::MutCell(_)) = input.peek() {
@@ -38,7 +39,7 @@ fn merge_muts(input: Program, settings: &Settings) -> Program {
                     value = value.wrapping_add(input.next().unwrap().unwrap_mut_cell());
                 }
                 builder.include(I::MutCell(value));
-            }
+            },
             other => builder.preserve(other),
         }
     }
@@ -109,7 +110,7 @@ fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
                     Ok(new) => builder.include(I::SetCell(new)),
                     Err(_) => return builder.overflow(),
                 },
-                None => {
+                None =>
                     if settings.strict() {
                         include_all_changes(&mut builder, &changes);
                     } else {
@@ -119,8 +120,7 @@ fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
                         if value != 0 {
                             builder.include(I::MutCell(value));
                         }
-                    }
-                }
+                    },
             };
         };
     }
@@ -131,24 +131,23 @@ fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
                 builder.omit(1);
                 if settings.strict() {
                     match chain.0 {
-                        Some(value) => {
+                        Some(value) =>
                             if change_value(value, &chain.1).is_err() {
                                 return builder.overflow();
-                            }
-                        }
+                            },
                         None => include_all_changes(&mut builder, &chain.1),
                     }
                 }
                 chain = (Some(value), Vec::new());
-            }
+            },
             I::MutCell(change) => {
                 builder.omit(1);
                 chain.1.push(change);
-            }
+            },
             other => {
                 finish_chain!();
                 builder.preserve(other);
-            }
+            },
         }
     }
 
@@ -198,7 +197,7 @@ mod builder {
                     let entry = self.jumps.pop().unwrap();
                     self.result[entry.index] = I::JumpRightZ(entry.new_jump());
                     self.result[last] = I::JumpLeftNz(entry.new_jump());
-                }
+                },
                 _ => (),
             }
         }
@@ -230,13 +229,14 @@ mod builder {
 
 #[cfg(test)]
 mod tests {
-    use crate::VirtualMachine;
+    use std::ops::RangeBounds;
 
-    use super::{optimize, Program, Settings, I};
     use quickcheck::{Arbitrary, Gen};
     use quickcheck_macros::quickcheck;
-    use std::ops::RangeBounds;
     use test_case::test_case;
+
+    use super::{optimize, Program, Settings, I};
+    use crate::VirtualMachine;
 
     fn rand_range<T, R>(gen: &mut Gen, range: R) -> T
     where

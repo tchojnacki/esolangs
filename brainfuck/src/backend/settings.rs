@@ -45,14 +45,14 @@ impl Settings {
         self.strict
     }
 
-    pub fn mut_cell(&self, cell: u8, change: i8) -> Option<u8> {
+    pub const fn mut_cell(&self, cell: u8, change: i8) -> Option<u8> {
         match self.strict {
             true => cell.checked_add_signed(change),
             false => Some(cell.wrapping_add_signed(change)),
         }
     }
 
-    pub fn mut_pointer(&self, pointer: usize, change: i32) -> Option<usize> {
+    pub const fn mut_pointer(&self, pointer: usize, change: i32) -> Option<usize> {
         let new = pointer as i32 + change;
         if self.strict && (new < 0 || new >= self.tape_length as i32) {
             return None;

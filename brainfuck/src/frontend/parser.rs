@@ -25,7 +25,7 @@ fn parse_proc(
     tokens: &mut impl Iterator<Item = Token>,
     context: Context,
 ) -> Result<Tree, ParseError> {
-    use {Context as C, Node as N, ParseError as E, TokenKind as TK};
+    use self::{Context as C, Node as N, ParseError as E, TokenKind as TK};
     let mut result = Vec::new();
     while let Some(token) = tokens.next() {
         result.push(match token.kind {
@@ -36,12 +36,11 @@ fn parse_proc(
             TK::Output => N::Output,
             TK::Input => N::Input,
             TK::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop)?),
-            TK::EndLoop => {
+            TK::EndLoop =>
                 return match context {
                     C::InsideLoop => Ok(result.into()),
                     C::Root => Err(E::UnexpectedLoopEnd(token.pos)),
-                }
-            }
+                },
         });
     }
     match context {

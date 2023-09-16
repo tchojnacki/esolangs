@@ -1,5 +1,6 @@
-use super::{conventions::Conventions, input::Input};
 use clap::Parser;
+
+use super::{conventions::Conventions, input::Input};
 
 #[derive(Parser)]
 pub struct Arguments {

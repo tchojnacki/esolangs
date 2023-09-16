@@ -1,12 +1,13 @@
+use std::{
+    io::{stdin, stdout},
+    process::ExitCode,
+};
+
 use args::Arguments;
 use brainfuck::{compile, VirtualMachine};
 use clap::Parser;
 use colored::Colorize;
 use errors::CliError;
-use std::{
-    io::{stdin, stdout},
-    process::ExitCode,
-};
 
 mod args;
 mod conventions;
@@ -19,7 +20,7 @@ fn main() -> ExitCode {
         Err(err) => {
             eprintln!("{}", err.red());
             ExitCode::FAILURE
-        }
+        },
     }
 }
 

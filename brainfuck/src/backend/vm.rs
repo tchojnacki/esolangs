@@ -1,3 +1,5 @@
+use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
+
 use crate::{
     backend::{
         instruction::{Instruction, Program},
@@ -5,7 +7,6 @@ use crate::{
     },
     util::{read_byte, write_byte},
 };
-use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
 #[must_use]
 #[derive(Debug, PartialEq)]
@@ -73,7 +74,7 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
                         by: change,
                     },
                 )?;
-            }
+            },
             I::MutCell(change) => {
                 let previous = *self.c();
                 *self.c() =
@@ -84,25 +85,21 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
                             from: *self.c(),
                             by: change,
                         })?;
-            }
+            },
             I::SetCell(value) => *self.c() = value,
-            I::JumpRightZ(offset) => {
+            I::JumpRightZ(offset) =>
                 if *self.c() == 0 {
                     self.pc += offset as usize;
-                }
-            }
-            I::JumpLeftNz(offset) => {
+                },
+            I::JumpLeftNz(offset) =>
                 if *self.c() != 0 {
                     self.pc -= offset as usize;
-                }
-            }
-            I::Input => {
-                *self.c() = read_byte(&mut self.read).ok_or(RuntimeError::InputError)?;
-            }
+                },
+            I::Input => *self.c() = read_byte(&mut self.read).ok_or(RuntimeError::InputError)?,
             I::Output => {
                 let value = *self.c();
                 write_byte(&mut self.write, value).ok_or(RuntimeError::OutputError)?;
-            }
+            },
         }
         Ok(())
     }

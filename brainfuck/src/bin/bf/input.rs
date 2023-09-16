@@ -1,6 +1,7 @@
+use std::{fs, io::stdin, path::PathBuf};
+
 use brainfuck::util::read_byte;
 use clap::Parser;
-use std::{fs, io::stdin, path::PathBuf};
 
 #[derive(Parser)]
 #[command(next_help_heading = "Input")]
@@ -36,14 +37,13 @@ impl Input {
                     match read_byte(&mut input) {
                         Some(0) | Some(b'!') => break,
                         Some(byte) => output.push(byte as char),
-                        None => {
+                        None =>
                             return Err("InterpreterError: Unexpected error while reading stdin."
-                                .to_owned())
-                        }
+                                .to_owned()),
                     }
                 }
                 Ok(output)
-            }
+            },
             _ => unreachable!(),
         }
     }

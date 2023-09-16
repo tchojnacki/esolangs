@@ -5,7 +5,7 @@ mod backend;
 mod frontend;
 pub mod util;
 
-pub use {
+pub use self::{
     backend::{
         settings::Settings,
         vm::{RuntimeError, VirtualMachine},
