@@ -23,6 +23,7 @@
 $ bf -c "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+."
 hello, world!
 
+
 $ bf --help
 Usage: bf [OPTIONS] <--file <FILE>|--code <CODE>|--stdin>
 
@@ -37,6 +38,7 @@ Input:
 Conventions:
       --length <TAPE_LENGTH>  Count of available memory cells [default: 30000]
       --strict                If enabled, stop execution when overflowing a cell or tape index
+
 
 $ bf -f specs/mandelbrot.code.bf
 AAAAAAAAAAAAAAAABBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDEGFFEEEEDDDDDDCCCCCCCCCBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
