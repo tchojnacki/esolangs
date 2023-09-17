@@ -8,6 +8,7 @@ pub enum Instruction {
     JumpLeftNz(u32),
     Input,
     Output,
+    Breakpoint(u32),
 }
 
 impl Instruction {

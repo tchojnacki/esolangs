@@ -41,6 +41,7 @@ fn parse_proc(
                     C::InsideLoop => Ok(result.into()),
                     C::Root => Err(E::UnexpectedLoopEnd(token.pos)),
                 },
+            TK::Debug => N::Breakpoint(token.pos),
         });
     }
     match context {

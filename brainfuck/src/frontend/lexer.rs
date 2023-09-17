@@ -12,6 +12,7 @@ pub fn tokenize(code: &str) -> impl Iterator<Item = Token> + '_ {
             ',' => Some(TK::Input),
             '[' => Some(TK::StartLoop),
             ']' => Some(TK::EndLoop),
+            '#' => Some(TK::Debug),
             _ => None,
         }
         .map(|kind| Token { kind, pos })
@@ -26,13 +27,13 @@ mod tests {
         assert_eq!(
             tokenize(input).map(|t| t.kind).collect::<Vec<_>>(),
             expected
-        );
+        )
     }
 
     #[test]
     fn tokenizes_all_characters() {
         assert_tokenizes(
-            "><+-.,[]",
+            "><+-.,[]#",
             &[
                 TK::Right,
                 TK::Left,
@@ -42,6 +43,7 @@ mod tests {
                 TK::Input,
                 TK::StartLoop,
                 TK::EndLoop,
+                TK::Debug,
             ],
         )
     }

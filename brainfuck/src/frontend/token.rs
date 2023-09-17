@@ -15,4 +15,5 @@ pub enum TokenKind {
     Input,
     StartLoop,
     EndLoop,
+    Debug,
 }

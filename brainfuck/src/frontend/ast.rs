@@ -8,6 +8,7 @@ pub enum Node {
     Output,
     Input,
     Loop(Tree),
+    Breakpoint(usize),
 }
 
 pub type Tree = Box<[Node]>;

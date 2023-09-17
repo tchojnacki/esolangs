@@ -100,20 +100,21 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
                 let value = *self.c();
                 write_byte(&mut self.write, value).ok_or(RuntimeError::OutputError)?;
             },
+            I::Breakpoint(_) => (), // NOOP
         }
         Ok(())
     }
 
     #[must_use]
-    fn step(&mut self) -> Option<Result<(), RuntimeError>> {
+    fn step(&mut self) -> Option<Result<Instruction, RuntimeError>> {
         let instruction = *self.program.get(self.pc)?;
         self.pc += 1;
-        Some(self.exec(instruction))
+        Some(self.exec(instruction).map(|_| instruction))
     }
 
     pub fn run(&mut self) -> Result<(), RuntimeError> {
         while let Some(result) = self.step() {
-            result?;
+            let _: Instruction = result?;
         }
         Ok(())
     }
@@ -210,10 +211,10 @@ mod tests {
     fn reaches_all_values_with_mut_cell() {
         let mut vm =
             VirtualMachine::new_std_default(vec![I::MutCell(127), I::SetCell(0), I::MutCell(-128)]);
-        vm.step().unwrap().unwrap();
+        assert_eq!(vm.step(), Some(Ok(I::MutCell(127))));
         assert_eq!(*vm.c(), 127);
-        vm.step().unwrap().unwrap();
-        vm.step().unwrap().unwrap();
+        assert_eq!(vm.step(), Some(Ok(I::SetCell(0))));
+        assert_eq!(vm.step(), Some(Ok(I::MutCell(-128))));
         assert_eq!(*vm.c(), 128);
     }
 
@@ -243,7 +244,7 @@ mod tests {
     fn wraps_around_custom_tape_length_without_strict() {
         let mut vm = VirtualMachine::new_std(
             vec![I::MutCell(13), I::MutPointer(21)],
-            Settings::try_new(21, false).unwrap(),
+            Settings::try_new(21, false, false).unwrap(),
         );
         vm.run().unwrap();
         assert_eq!(*vm.c(), 13);

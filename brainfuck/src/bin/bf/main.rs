@@ -10,7 +10,6 @@ use colored::Colorize;
 use errors::CliError;
 
 mod args;
-mod conventions;
 mod errors;
 mod input;
 
@@ -26,7 +25,7 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), String> {
     let args = Arguments::parse();
-    let settings = args.conventions.into();
+    let settings = (&args).into();
     let source = args.input.get_source()?;
     let program = compile(&source, &settings).map_err(|e| e.message(&source))?;
     let mut vm = VirtualMachine::new(program, settings, stdin(), stdout());

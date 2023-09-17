@@ -23,6 +23,7 @@ pub fn emit(ast: &Tree) -> Program {
                 result.append(&mut subcode);
                 result.push(I::JumpLeftNz(jump));
             },
+            N::Breakpoint(pos) => result.push(I::Breakpoint(*pos as u32)),
         };
     }
     result

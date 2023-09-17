@@ -8,9 +8,26 @@ use crate::{
 
 #[must_use]
 pub fn optimize(program: Program, settings: &Settings) -> Program {
+    if settings.debug() {
+        return program;
+    }
+
+    let program = remove_breakpoints(program);
     let program = merge_muts(program, settings);
     let program = create_sets(program, settings);
     reduce_cell_chains(program, settings)
+}
+
+fn remove_breakpoints(input: Program) -> Program {
+    let mut builder = Builder::with_capacity(input.len());
+    for instr in input {
+        if let I::Breakpoint(_) = instr {
+            builder.omit(1);
+        } else {
+            builder.preserve(instr);
+        }
+    }
+    builder.build()
 }
 
 fn merge_muts(input: Program, settings: &Settings) -> Program {
@@ -258,7 +275,9 @@ mod tests {
                         let mut_cell = I::MutCell(rand_range(gen, -128..=127));
                         let mut_pointer = I::MutPointer(rand_range(gen, -100..=100));
                         let set_cell = I::SetCell(rand_range(gen, 0..=255));
-                        *gen.choose(&[mut_cell, mut_pointer, set_cell]).unwrap()
+                        let breakpoint = I::Breakpoint(rand_range(gen, 0..len));
+                        *gen.choose(&[mut_cell, mut_pointer, set_cell, breakpoint])
+                            .unwrap()
                     })
                     .collect::<Vec<_>>(),
             )
@@ -269,8 +288,8 @@ mod tests {
         fn arbitrary(g: &mut Gen) -> Self {
             let len = *g.choose(&[3, 10, 100, 256, 1024]).unwrap();
             g.choose(&[
-                Settings::try_new(len, false).unwrap(),
-                Settings::try_new(len, true).unwrap(),
+                Settings::try_new(len, false, false).unwrap(),
+                Settings::try_new(len, true, false).unwrap(),
             ])
             .unwrap()
             .clone()
@@ -414,6 +433,25 @@ mod tests {
         )
     }
 
+    #[test]
+    fn removes_instructions_after_overflow() {
+        assert_eq!(
+            optimize(
+                vec![
+                    I::MutPointer(-3),
+                    I::SetCell(200),
+                    I::MutCell(100),
+                    I::MutPointer(3),
+                    I::JumpRightZ(2),
+                    I::MutCell(-1),
+                    I::JumpLeftNz(2),
+                ],
+                &Settings::default_strict()
+            ),
+            vec![I::MutPointer(-3), I::SetCell(255), I::MutCell(1)]
+        );
+    }
+
     #[quickcheck]
     fn reduces_instruction_count(simple_program: SimpleProgram, settings: Settings) -> bool {
         let SimpleProgram(program) = simple_program;
@@ -435,5 +473,12 @@ mod tests {
             true => after_res.is_ok() && before_vm.memory() == after_vm.memory(),
             false => after_res.is_err(),
         }
+    }
+
+    #[quickcheck]
+    fn removes_all_breakpoints(simple_program: SimpleProgram, settings: Settings) -> bool {
+        let SimpleProgram(program) = simple_program;
+        let out = optimize(program, &settings);
+        !out.iter().any(|i| matches!(i, I::Breakpoint(_)))
     }
 }

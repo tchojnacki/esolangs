@@ -2,19 +2,6 @@
 
 > Brainfuck is an esoteric programming language created in 1993 by Urban Müller. Notable for its extreme minimalism, the language consists of only eight simple commands, a data pointer and an instruction pointer. While it is fully Turing complete, it is not intended for practical use, but to challenge and amuse programmers [^1].
 
-## Features
-
-- Fully implemented lexer, parser, bytecode generator, optimizer and interpreter.
-- Can be used as a binary or library.
-- Covered by unit, property and integration tests.
-- Reading code from file, as an argument or from stdin.
-- Conventions:
-  - Starting cell index: 0
-  - Cell size: 8 bit unsigned
-  - Cell overflow: wrapping (customizable)
-  - Tape length: 30 000 (customizable)
-  - Tape overflow: wrapping (customizable)
-
 ## Examples
 
 ### Binary
@@ -28,7 +15,8 @@ $ bf --help
 Usage: bf [OPTIONS] <--file <FILE>|--code <CODE>|--stdin>
 
 Options:
-  -h, --help  Print help
+  -d, --debug  Run code in debug mode (use # to set a breakpoint)
+  -h, --help   Print help
 
 Input:
   -f, --file <FILE>  Path to the file containing the program code
@@ -94,9 +82,23 @@ AAAAAAAAAAAAAAABBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDEEEFGII
 ### Library
 
 ```Rust
-let program = compile_debug("+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.").expect("Parse error!");
+let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
+let program = compile(source, &Settings::default()).expect("Parse error!");
 VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 ```
+
+## Features
+
+- Fully implemented lexer, parser, bytecode generator, optimizer and interpreter.
+- Can be used as a binary or library.
+- Covered by unit, property and integration tests.
+- Reading code from file, as an argument or from stdin.
+- Conventions:
+  - Starting cell index: 0
+  - Cell size: 8 bit unsigned
+  - Cell overflow: wrapping (customizable)
+  - Tape length: 30 000 (customizable)
+  - Tape overflow: wrapping (customizable)
 
 ## TODO
 

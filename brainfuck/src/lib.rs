@@ -19,9 +19,3 @@ pub fn compile(code: &str, settings: &Settings) -> Result<Program, ParseError> {
     let program = emit(&ast);
     Ok(optimize(program, settings))
 }
-
-pub fn compile_debug(code: &str) -> Result<Program, ParseError> {
-    let tokens = tokenize(code);
-    let ast = parse(tokens)?;
-    Ok(emit(&ast))
-}
