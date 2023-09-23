@@ -28,7 +28,9 @@ pub struct VirtualMachine<R: Read, W: Write> {
     write: W,
 }
 
-impl VirtualMachine<Stdin, Stdout> {
+pub type VirtualMachineStd = VirtualMachine<Stdin, Stdout>;
+
+impl VirtualMachineStd {
     pub fn new_std(program: Program, settings: Settings) -> Self {
         Self::new(program, settings, stdin(), stdout())
     }
@@ -106,7 +108,7 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
     }
 
     #[must_use]
-    fn step(&mut self) -> Option<Result<Instruction, RuntimeError>> {
+    pub fn step(&mut self) -> Option<Result<Instruction, RuntimeError>> {
         let instruction = *self.program.get(self.pc)?;
         self.pc += 1;
         Some(self.exec(instruction).map(|_| instruction))

@@ -7,8 +7,9 @@ pub mod util;
 
 pub use self::{
     backend::{
+        instruction::Instruction,
         settings::Settings,
-        vm::{RuntimeError, VirtualMachine},
+        vm::{RuntimeError, VirtualMachine, VirtualMachineStd},
     },
     frontend::parser::ParseError,
 };
