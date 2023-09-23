@@ -1,4 +1,5 @@
 use brainfuck::{ParseError, RuntimeError};
+use colored::Colorize;
 
 use crate::source::highlight_source;
 
@@ -38,4 +39,8 @@ impl CliError for RuntimeError {
             ),
         }
     }
+}
+
+pub fn show_error(message: &str) {
+    eprintln!("\n{}", message.red());
 }

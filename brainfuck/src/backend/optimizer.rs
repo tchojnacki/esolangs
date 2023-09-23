@@ -78,13 +78,15 @@ fn create_sets(input: Program, settings: &Settings) -> Program {
             if let (I::JumpRightZ(_), I::MutCell(value), I::JumpLeftNz(_)) =
                 (queue[0], queue[1], queue[2])
             {
-                queue.clear();
-                builder.omit(3);
                 if value == 1 && settings.strict() {
-                    return builder.overflow();
+                    builder.preserve(queue[0]);
+                    builder.preserve(queue[1]);
+                    builder.preserve(queue[2]);
                 } else if value == -1 || value == 1 {
+                    builder.omit(3);
                     builder.include(I::SetCell(0));
                 }
+                queue.clear();
             }
         }
     }
@@ -397,7 +399,12 @@ mod tests {
                 ],
                 &Settings::default_strict()
             ),
-            vec![I::SetCell(255), I::MutCell(1)]
+            vec![
+                I::JumpRightZ(3),
+                I::MutCell(1),
+                I::JumpLeftNz(3),
+                I::MutPointer(3)
+            ]
         )
     }
 

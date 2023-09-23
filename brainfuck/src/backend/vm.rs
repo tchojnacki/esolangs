@@ -57,8 +57,24 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         }
     }
 
+    pub const fn program(&self) -> &Program {
+        &self.program
+    }
+
+    pub const fn pc(&self) -> usize {
+        self.pc
+    }
+
+    pub const fn pointer(&self) -> usize {
+        self.pointer
+    }
+
     pub const fn memory(&self) -> &[u8] {
         &self.memory
+    }
+
+    pub const fn settings(&self) -> &Settings {
+        &self.settings
     }
 
     #[must_use]

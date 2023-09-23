@@ -3,9 +3,8 @@ use std::process::ExitCode;
 use args::Arguments;
 use brainfuck::{compile, Settings, VirtualMachine};
 use clap::Parser;
-use colored::Colorize;
 use debugger::run_debugger;
-use errors::CliError;
+use errors::{show_error, CliError};
 
 mod args;
 mod debugger;
@@ -17,7 +16,7 @@ fn main() -> ExitCode {
     match run() {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
-            eprintln!("{}", err.red());
+            show_error(&err);
             ExitCode::FAILURE
         },
     }

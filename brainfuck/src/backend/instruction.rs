@@ -1,3 +1,5 @@
+use std::fmt::{self, Display, Formatter};
+
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Instruction {
@@ -10,6 +12,8 @@ pub enum Instruction {
     Output,
     Breakpoint(u32),
 }
+
+pub type Program = Vec<Instruction>;
 
 impl Instruction {
     pub fn unwrap_mut_pointer(&self) -> i32 {
@@ -27,4 +31,19 @@ impl Instruction {
     }
 }
 
-pub type Program = Vec<Instruction>;
+impl Display for Instruction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MutPointer(1) => write!(f, ">"),
+            Self::MutPointer(-1) => write!(f, "<"),
+            Self::MutCell(1) => write!(f, "+"),
+            Self::MutCell(-1) => write!(f, "-"),
+            Self::Output => write!(f, "."),
+            Self::Input => write!(f, ","),
+            Self::JumpRightZ(_) => write!(f, "["),
+            Self::JumpLeftNz(_) => write!(f, "]"),
+            Self::Breakpoint(_) => write!(f, "#"),
+            _ => write!(f, "¿"),
+        }
+    }
+}
