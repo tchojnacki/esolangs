@@ -2,6 +2,8 @@
 
 > Brainfuck is an esoteric programming language created in 1993 by Urban Müller. Notable for its extreme minimalism, the language consists of only eight simple commands, a data pointer and an instruction pointer. While it is fully Turing complete, it is not intended for practical use, but to challenge and amuse programmers [^1].
 
+![](./.github/docs/mandelbrot.gif)
+
 ## Examples
 
 ### Binary
@@ -77,6 +79,43 @@ AAAAAAAAAAABBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDEEEEEEFGGHHI
 AAAAAAAAAAAABBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDEEEEEFFGHIMTKLZOGFEEDDDDDDDDDCCCCCCCCCBBBBBBBBBBBBBBBBBBBBB
 AAAAAAAAAAAAABBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDEEEEFFFI KHGGGHGEDDDDDDDDDCCCCCCCCCBBBBBBBBBBBBBBBBBBBBBBB
 AAAAAAAAAAAAAAABBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDEEEFGIIGFFEEEDDDDDDDDCCCCCCCCCBBBBBBBBBBBBBBBBBBBBBBBBBB
+
+
+$ bf -f specs/add.code.bf -d
+Debugger: Entering debugger due to a breakpoint hit.
+  | es ]␤#␤++␤>
+  |      ^ breakpoint defined here
+  |        at 2:1
+Use :r to resume, use :h to see all commands.
+> :h
+Available commands:
+  :c, :code          Display the surrounding instructions
+  :m, :memory <C>    Display memory around cell C [default: pointer location]
+  :r, :resume        Resume the execution
+  :s, :step <N>      Execute up to N next instructions [default: 1]
+  :q, :quit          Abort the execution
+  :h, :help          Display the list of available commands
+> :s 10
+Executing up to 10 next instructions...
+  +
+  +
+  >
+  +
+  +
+  +
+  +
+  +
+  [
+  <
+> :c
+  | +++[<+>-]++
+  |      ^ PC: 16
+> :m
+  [000] [000] [002] [005] [000]
+                ^ #0
+> :r
+Resuming execution...
+7
 ```
 
 ### Library
@@ -89,7 +128,13 @@ VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 
 ## Features
 
-- Fully implemented lexer, parser, bytecode generator, optimizer and interpreter.
+- Fully implemented:
+  - lexer
+  - parser
+  - bytecode generator
+  - optimizer
+  - interpreter
+  - debugger
 - Can be used as a binary or library.
 - Covered by unit, property and integration tests.
 - Reading code from file, as an argument or from stdin.
@@ -102,7 +147,7 @@ VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 
 ## TODO
 
-- Built-in [debugger](https://esolangs.org/wiki/Brainfuck#Extensions).
+- Split the binary and the library into separate crates.
 - Other targets (WASM, JIT).
 - Documentation for public API.
 

@@ -106,8 +106,7 @@ fn exec_help() {
           :r, :resume        Resume the execution
           :s, :step <N>      Execute up to N next instructions [default: 1]
           :q, :quit          Abort the execution
-          :h, :help          Display the list of available commands
-    "});
+          :h, :help          Display the list of available commands"});
 }
 
 fn exec_memory(vm: &VirtualMachineStd, c: Option<&str>) {
@@ -130,7 +129,7 @@ fn exec_memory(vm: &VirtualMachineStd, c: Option<&str>) {
 
     show(
         format!(
-            "  {} {} {} {} {}\n                ^ #{}\n",
+            "  {} {} {} {} {}\n                ^ #{}",
             cell(-2),
             cell(-1),
             cell(0),
