@@ -82,6 +82,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "bf"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "brainlib",
+ "clap",
+ "colored",
+ "indoc",
+ "predicates",
+ "rustyline",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,17 +107,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
 
 [[package]]
-name = "brainfuck"
+name = "brainlib"
 version = "0.1.0"
 dependencies = [
- "assert_cmd",
- "clap",
- "colored",
- "indoc",
- "predicates",
  "quickcheck",
  "quickcheck_macros",
- "rustyline",
  "test-case",
 ]
 

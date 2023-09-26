@@ -1,4 +1,4 @@
-use brainfuck::Settings;
+use brainlib::Settings;
 use clap::{value_parser, Parser};
 
 use super::input::Input;

@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use brainfuck::{Instruction, VirtualMachineStd};
+use brainlib::{Instruction, VirtualMachineStd};
 use colored::Colorize;
 use indoc::indoc;
 use rustyline::{error::ReadlineError, DefaultEditor};

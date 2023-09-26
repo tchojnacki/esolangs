@@ -1,0 +1,9 @@
+[package]
+name = "brainlib"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
+test-case = "3.1.0"

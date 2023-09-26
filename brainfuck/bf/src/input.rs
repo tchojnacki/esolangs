@@ -1,6 +1,6 @@
 use std::{fs, io::stdin, path::PathBuf};
 
-use brainfuck::util::read_byte;
+use brainlib::util::read_byte;
 use clap::Parser;
 
 #[derive(Parser)]
