@@ -1,8 +1,8 @@
 use std::fmt::{self, Display};
 
-use super::{emitter::emit, instruction::Instruction, optimizer::optimize};
 use crate::{
-    frontend::{lexer::tokenize, parser::parse},
+    backend::common::{emit, optimize, Instruction},
+    frontend::{parse, tokenize},
     ParseError, Settings,
 };
 

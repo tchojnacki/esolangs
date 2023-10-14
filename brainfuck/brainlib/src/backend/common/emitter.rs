@@ -1,6 +1,6 @@
 use crate::{
-    backend::common::{instruction::Instruction, program::Program},
-    frontend::ast::{Node, Tree},
+    backend::common::{Instruction, Program},
+    frontend::{Node, Tree},
 };
 
 pub(crate) fn emit(ast: &Tree) -> Program {

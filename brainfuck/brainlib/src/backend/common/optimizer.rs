@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, mem};
 
 use self::builder::Builder;
-use crate::backend::common::{instruction::Instruction as I, program::Program, settings::Settings};
+use crate::backend::common::{Instruction as I, Program, Settings};
 
 pub(crate) fn optimize(program: Program, settings: &Settings) -> Program {
     if settings.debug() {

@@ -1,10 +1,4 @@
-use crate::{
-    frontend::{
-        ast::{Node, Tree},
-        token::{Token, TokenKind},
-    },
-    ParseError,
-};
+use crate::frontend::{Node, ParseError, Token, TokenKind, Tree};
 
 #[must_use]
 #[derive(Clone, Copy)]

@@ -1,7 +1,7 @@
 use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
 use crate::{
-    backend::common::{instruction::Instruction, program::Program, settings::Settings},
+    backend::common::{Instruction, Program, Settings},
     interpreter::RuntimeError,
     util::{read_byte, write_byte},
 };

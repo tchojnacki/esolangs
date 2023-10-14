@@ -1,4 +1,4 @@
-use crate::frontend::token::{Token, TokenKind};
+use crate::frontend::{Token, TokenKind};
 
 pub(crate) fn tokenize(source: &str) -> impl Iterator<Item = Token> + '_ {
     use TokenKind as TK;

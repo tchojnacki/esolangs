@@ -4,10 +4,10 @@ pub mod util;
 
 pub use crate::{
     backend::{
-        common::{instruction::Instruction, program::Program, settings::Settings},
+        common::{Instruction, Program, Settings},
         interpreter,
     },
-    frontend::parse_error::ParseError,
+    frontend::ParseError,
 };
 
 #[cfg(test)]
