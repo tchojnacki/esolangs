@@ -1,15 +1,15 @@
-use backend::{emitter::emit, instruction::Program, optimizer::optimize};
-use frontend::{lexer::tokenize, parser::parse};
-
 mod backend;
 mod frontend;
 pub mod util;
 
-pub use self::{
+use crate::{
+    backend::common::{emitter::emit, instruction::Program, optimizer::optimize},
+    frontend::{lexer::tokenize, parser::parse},
+};
+pub use crate::{
     backend::{
-        instruction::Instruction,
-        settings::Settings,
-        vm::{RuntimeError, VirtualMachine, VirtualMachineStd},
+        common::{instruction::Instruction, settings::Settings},
+        interpreter,
     },
     frontend::parser::ParseError,
 };

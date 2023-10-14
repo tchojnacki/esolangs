@@ -1,5 +1,5 @@
 use crate::{
-    backend::instruction::{Instruction, Program},
+    backend::common::instruction::{Instruction, Program},
     frontend::ast::{Node, Tree},
 };
 

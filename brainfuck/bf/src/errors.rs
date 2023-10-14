@@ -1,4 +1,4 @@
-use brainlib::{ParseError, RuntimeError};
+use brainlib::{interpreter::RuntimeError, ParseError};
 use colored::Colorize;
 
 use crate::source::highlight_source;

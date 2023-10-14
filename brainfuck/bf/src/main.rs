@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
 use args::Arguments;
-use brainlib::{compile, Settings, VirtualMachine};
+use brainlib::{compile, interpreter::VirtualMachine, Settings};
 use clap::Parser;
 use debugger::run_debugger;
 use errors::{show_error, CliError};

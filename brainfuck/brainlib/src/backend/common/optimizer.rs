@@ -1,9 +1,9 @@
 use std::{collections::VecDeque, mem};
 
 use self::builder::Builder;
-use crate::{
-    backend::instruction::{Instruction as I, Program},
-    Settings,
+use crate::backend::common::{
+    instruction::{Instruction as I, Program},
+    settings::Settings,
 };
 
 #[must_use]
@@ -255,7 +255,7 @@ mod tests {
     use test_case::test_case;
 
     use super::{optimize, Program, Settings, I};
-    use crate::VirtualMachine;
+    use crate::interpreter::VirtualMachine;
 
     fn rand_range<T, R>(gen: &mut Gen, range: R) -> T
     where
