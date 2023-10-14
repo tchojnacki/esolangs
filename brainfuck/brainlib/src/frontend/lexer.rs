@@ -1,8 +1,8 @@
 use crate::frontend::token::{Token, TokenKind};
 
-pub fn tokenize(code: &str) -> impl Iterator<Item = Token> + '_ {
+pub(crate) fn tokenize(source: &str) -> impl Iterator<Item = Token> + '_ {
     use TokenKind as TK;
-    code.chars().enumerate().filter_map(|(pos, c)| {
+    source.chars().enumerate().filter_map(|(pos, c)| {
         match c {
             '>' => Some(TK::Right),
             '<' => Some(TK::Left),

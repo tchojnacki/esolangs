@@ -1,12 +1,12 @@
 #[must_use]
-pub struct Token {
+pub(crate) struct Token {
     pub kind: TokenKind,
     pub pos: usize,
 }
 
 #[must_use]
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub enum TokenKind {
+pub(crate) enum TokenKind {
     Right,
     Left,
     Increment,

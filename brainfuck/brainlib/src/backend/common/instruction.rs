@@ -13,17 +13,17 @@ pub enum Instruction {
     Breakpoint(u32),
 }
 
-pub type Program = Vec<Instruction>;
-
 impl Instruction {
-    pub fn unwrap_mut_pointer(&self) -> i32 {
+    #[must_use]
+    pub(crate) fn unwrap_mut_pointer(&self) -> i32 {
         match self {
             Instruction::MutPointer(value) => *value,
             _ => panic!(),
         }
     }
 
-    pub fn unwrap_mut_cell(&self) -> i8 {
+    #[must_use]
+    pub(crate) fn unwrap_mut_cell(&self) -> i8 {
         match self {
             Instruction::MutCell(value) => *value,
             _ => panic!(),

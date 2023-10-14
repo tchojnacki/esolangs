@@ -1,6 +1,6 @@
 #[must_use]
 #[derive(Debug, PartialEq)]
-pub enum Node {
+pub(crate) enum Node {
     Right,
     Left,
     Increment,
@@ -11,4 +11,4 @@ pub enum Node {
     Breakpoint(usize),
 }
 
-pub type Tree = Box<[Node]>;
+pub(crate) type Tree = Box<[Node]>;

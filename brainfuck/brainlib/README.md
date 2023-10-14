@@ -7,7 +7,7 @@
 
 ```Rust
 let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
-let program = compile(source, &Settings::default()).expect("Parse error!");
+let program = Program::compile(source, &Settings::default()).expect("Parse error!");
 VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 ```
 

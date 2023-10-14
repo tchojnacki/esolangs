@@ -19,6 +19,10 @@ impl Default for Settings {
 impl Settings {
     pub const DEFAULT_LENGTH: u32 = 30_000;
 
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     #[must_use]
     pub const fn try_new(tape_length: u32, strict: bool, debug: bool) -> Option<Self> {
         match tape_length {
@@ -28,14 +32,6 @@ impl Settings {
                 debug,
             }),
             _ => None,
-        }
-    }
-
-    pub const fn default_strict() -> Self {
-        Self {
-            tape_length: Self::DEFAULT_LENGTH,
-            strict: true,
-            debug: false,
         }
     }
 
@@ -54,14 +50,44 @@ impl Settings {
         self.debug
     }
 
-    pub const fn mut_cell(&self, cell: u8, change: i8) -> Option<u8> {
+    pub const fn with_strict(self) -> Self {
+        Self {
+            strict: true,
+            ..self
+        }
+    }
+
+    pub const fn without_strict(self) -> Self {
+        Self {
+            strict: false,
+            ..self
+        }
+    }
+
+    pub const fn with_debug(self) -> Self {
+        Self {
+            debug: true,
+            ..self
+        }
+    }
+
+    pub const fn without_debug(self) -> Self {
+        Self {
+            debug: false,
+            ..self
+        }
+    }
+
+    #[must_use]
+    pub(crate) const fn mut_cell(&self, cell: u8, change: i8) -> Option<u8> {
         match self.strict {
             true => cell.checked_add_signed(change),
             false => Some(cell.wrapping_add_signed(change)),
         }
     }
 
-    pub const fn mut_pointer(&self, pointer: usize, change: i32) -> Option<usize> {
+    #[must_use]
+    pub(crate) const fn mut_pointer(&self, pointer: usize, change: i32) -> Option<usize> {
         let new = pointer as i32 + change;
         if self.strict && (new < 0 || new >= self.tape_length as i32) {
             return None;

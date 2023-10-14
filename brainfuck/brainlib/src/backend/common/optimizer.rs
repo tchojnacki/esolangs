@@ -1,13 +1,9 @@
 use std::{collections::VecDeque, mem};
 
 use self::builder::Builder;
-use crate::backend::common::{
-    instruction::{Instruction as I, Program},
-    settings::Settings,
-};
+use crate::backend::common::{instruction::Instruction as I, program::Program, settings::Settings};
 
-#[must_use]
-pub fn optimize(program: Program, settings: &Settings) -> Program {
+pub(crate) fn optimize(program: Program, settings: &Settings) -> Program {
     if settings.debug() {
         return program;
     }
@@ -20,7 +16,7 @@ pub fn optimize(program: Program, settings: &Settings) -> Program {
 
 fn remove_breakpoints(input: Program) -> Program {
     let mut builder = Builder::with_capacity(input.len());
-    for instr in input {
+    for instr in input.0 {
         if let I::Breakpoint(_) = instr {
             builder.omit(1);
         } else {
@@ -35,7 +31,7 @@ fn merge_muts(input: Program, settings: &Settings) -> Program {
         return input;
     }
 
-    let mut input = input.into_iter().peekable();
+    let mut input = input.0.into_iter().peekable();
     let mut builder = Builder::with_capacity(input.len());
 
     while let Some(instr) = input.next() {
@@ -68,7 +64,7 @@ fn create_sets(input: Program, settings: &Settings) -> Program {
     let mut builder = Builder::with_capacity(input.len());
     let mut queue = VecDeque::with_capacity(3);
 
-    for instr in input {
+    for instr in input.0 {
         if queue.len() == 3 {
             builder.preserve(queue.pop_front().unwrap());
         }
@@ -144,7 +140,7 @@ fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
         };
     }
 
-    for instr in input {
+    for instr in input.0 {
         match instr {
             I::SetCell(value) => {
                 builder.omit(1);
@@ -235,13 +231,13 @@ mod builder {
         }
 
         pub fn build(self) -> Program {
-            self.result
+            Program(self.result)
         }
 
         pub fn overflow(mut self) -> Program {
             self.result.push(I::SetCell(255));
             self.result.push(I::MutCell(1));
-            self.result
+            Program(self.result)
         }
     }
 }
@@ -271,7 +267,7 @@ mod tests {
     impl Arbitrary for SimpleProgram {
         fn arbitrary(gen: &mut Gen) -> Self {
             let len = rand_range(gen, 0..256);
-            Self(
+            Self(Program(
                 (0..len)
                     .map(|_| {
                         let mut_cell = I::MutCell(rand_range(gen, -128..=127));
@@ -282,7 +278,7 @@ mod tests {
                             .unwrap()
                     })
                     .collect::<Vec<_>>(),
-            )
+            ))
         }
     }
 
@@ -302,23 +298,23 @@ mod tests {
     fn merges_mut_cells_without_strict() {
         assert_eq!(
             optimize(
-                vec![I::MutCell(3), I::MutCell(127), I::MutCell(-128)],
-                &Settings::default(),
+                Program(vec![I::MutCell(3), I::MutCell(127), I::MutCell(-128)]),
+                &Settings::new(),
             ),
-            vec![I::MutCell(2)]
+            Program(vec![I::MutCell(2)])
         );
 
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::MutCell(127),
                     I::MutCell(1),
                     I::MutPointer(1),
                     I::MutCell(-13)
-                ],
-                &Settings::default(),
+                ]),
+                &Settings::new(),
             ),
-            vec![I::MutCell(-128), I::MutPointer(1), I::MutCell(-13)]
+            Program(vec![I::MutCell(-128), I::MutPointer(1), I::MutCell(-13)])
         );
     }
 
@@ -326,34 +322,34 @@ mod tests {
     fn does_not_merge_mut_cells_with_strict() {
         assert_eq!(
             optimize(
-                vec![I::SetCell(250), I::MutCell(10), I::MutCell(-9)],
-                &Settings::default_strict()
+                Program(vec![I::SetCell(250), I::MutCell(10), I::MutCell(-9)]),
+                &Settings::new().with_strict()
             ),
-            vec![I::SetCell(255), I::MutCell(1)]
+            Program(vec![I::SetCell(255), I::MutCell(1)])
         )
     }
 
-    #[test_case(Settings::default(); "without strict")]
-    #[test_case(Settings::default_strict(); "with strict")]
+    #[test_case(Settings::new().without_strict(); "without strict")]
+    #[test_case(Settings::new().with_strict(); "with strict")]
     fn edits_jumps(settings: Settings) {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::JumpRightZ(5),
                     I::SetCell(1),
                     I::SetCell(2),
                     I::SetCell(3),
                     I::MutPointer(1),
                     I::JumpLeftNz(5)
-                ],
+                ]),
                 &settings
             ),
-            vec![
+            Program(vec![
                 I::JumpRightZ(3),
                 I::SetCell(3),
                 I::MutPointer(1),
                 I::JumpLeftNz(3)
-            ]
+            ])
         )
     }
 
@@ -361,29 +357,29 @@ mod tests {
     fn merges_and_creates_sets_without_stricts() {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::MutPointer(5),
                     I::JumpRightZ(3),
                     I::MutCell(3),
                     I::MutCell(-4),
                     I::JumpLeftNz(3),
                     I::MutPointer(-5)
-                ],
-                &Settings::default()
+                ]),
+                &Settings::new()
             ),
-            vec![I::MutPointer(5), I::SetCell(0), I::MutPointer(-5)]
+            Program(vec![I::MutPointer(5), I::SetCell(0), I::MutPointer(-5)])
         )
     }
 
-    #[test_case(Settings::default(); "without strict")]
-    #[test_case(Settings::default_strict(); "with strict")]
+    #[test_case(Settings::new().without_strict(); "without strict")]
+    #[test_case(Settings::new().with_strict(); "with strict")]
     fn creates_sets(settings: Settings) {
         assert_eq!(
             optimize(
-                vec![I::JumpRightZ(3), I::MutCell(-1), I::JumpLeftNz(3)],
+                Program(vec![I::JumpRightZ(3), I::MutCell(-1), I::JumpLeftNz(3)]),
                 &settings
             ),
-            vec![I::SetCell(0)]
+            Program(vec![I::SetCell(0)])
         )
     }
 
@@ -391,20 +387,20 @@ mod tests {
     fn preserves_loop_overflow_with_strict() {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::JumpRightZ(3),
                     I::MutCell(1),
                     I::JumpLeftNz(3),
                     I::MutPointer(3)
-                ],
-                &Settings::default_strict()
+                ]),
+                &Settings::new().with_strict()
             ),
-            vec![
+            Program(vec![
                 I::JumpRightZ(3),
                 I::MutCell(1),
                 I::JumpLeftNz(3),
                 I::MutPointer(3)
-            ]
+            ])
         )
     }
 
@@ -412,15 +408,15 @@ mod tests {
     fn removes_leading_muts_without_strict() {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::MutCell(5),
                     I::MutCell(-3),
                     I::SetCell(10),
                     I::MutCell(-2)
-                ],
-                &Settings::default()
+                ]),
+                &Settings::new()
             ),
-            vec![I::SetCell(8)]
+            Program(vec![I::SetCell(8)])
         )
     }
 
@@ -428,15 +424,15 @@ mod tests {
     fn does_not_remove_leading_muts_with_strict() {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::MutCell(5),
                     I::MutCell(-3),
                     I::SetCell(10),
                     I::MutCell(-2)
-                ],
-                &Settings::default_strict()
+                ]),
+                &Settings::new().with_strict()
             ),
-            vec![I::MutCell(5), I::MutCell(-3), I::SetCell(8)]
+            Program(vec![I::MutCell(5), I::MutCell(-3), I::SetCell(8)])
         )
     }
 
@@ -444,7 +440,7 @@ mod tests {
     fn removes_instructions_after_overflow() {
         assert_eq!(
             optimize(
-                vec![
+                Program(vec![
                     I::MutPointer(-3),
                     I::SetCell(200),
                     I::MutCell(100),
@@ -452,10 +448,10 @@ mod tests {
                     I::JumpRightZ(2),
                     I::MutCell(-1),
                     I::JumpLeftNz(2),
-                ],
-                &Settings::default_strict()
+                ]),
+                &Settings::new().with_strict()
             ),
-            vec![I::MutPointer(-3), I::SetCell(255), I::MutCell(1)]
+            Program(vec![I::MutPointer(-3), I::SetCell(255), I::MutCell(1)])
         );
     }
 
@@ -486,6 +482,6 @@ mod tests {
     fn removes_all_breakpoints(simple_program: SimpleProgram, settings: Settings) -> bool {
         let SimpleProgram(program) = simple_program;
         let out = optimize(program, &settings);
-        !out.iter().any(|i| matches!(i, I::Breakpoint(_)))
+        !out.code().iter().any(|i| matches!(i, I::Breakpoint(_)))
     }
 }

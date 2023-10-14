@@ -91,6 +91,7 @@ fn repl(vm: &mut VirtualMachineStd, source: &str) -> Result<ReplAction, Readline
 fn exec_code(vm: &VirtualMachineStd) {
     let source = vm
         .program()
+        .code()
         .iter()
         .map(|i| i.to_string())
         .collect::<String>();
@@ -121,10 +122,8 @@ fn exec_memory(vm: &VirtualMachineStd, c: Option<&str>) {
     }
 
     let cell = |offset: i32| -> String {
-        match vm.settings().mut_pointer(c, offset) {
-            Some(i) => format!("[{:0>3}]", vm.memory()[i]),
-            None => "     ".to_owned(),
-        }
+        let i = (c as i32 + offset).rem_euclid(vm.settings().tape_length() as i32) as usize;
+        format!("[{:0>3}]", vm.memory()[i])
     };
 
     show(

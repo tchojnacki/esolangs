@@ -1,10 +1,7 @@
 use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
 use crate::{
-    backend::common::{
-        instruction::{Instruction, Program},
-        settings::Settings,
-    },
+    backend::common::{instruction::Instruction, program::Program, settings::Settings},
     util::{read_byte, write_byte},
 };
 
@@ -18,14 +15,14 @@ pub enum RuntimeError {
 }
 
 #[must_use]
-pub struct VirtualMachine<R: Read, W: Write> {
+pub struct VirtualMachine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
     pointer: usize,
     memory: Box<[u8]>,
     settings: Settings,
-    read: R,
-    write: W,
+    read: In,
+    write: Out,
 }
 
 pub type VirtualMachineStd = VirtualMachine<Stdin, Stdout>;
@@ -38,14 +35,10 @@ impl VirtualMachineStd {
     pub fn new_std_default(program: Program) -> Self {
         Self::new_std(program, Settings::default())
     }
-
-    pub fn new_std_strict(program: Program) -> Self {
-        Self::new_std(program, Settings::default_strict())
-    }
 }
 
-impl<R: Read, W: Write> VirtualMachine<R, W> {
-    pub fn new(program: Program, settings: Settings, read: R, write: W) -> Self {
+impl<In: Read, Out: Write> VirtualMachine<In, Out> {
+    pub fn new(program: Program, settings: Settings, read: In, write: Out) -> Self {
         Self {
             program,
             pc: 0,
@@ -61,14 +54,17 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
         &self.program
     }
 
+    #[must_use]
     pub const fn pc(&self) -> usize {
         self.pc
     }
 
+    #[must_use]
     pub const fn pointer(&self) -> usize {
         self.pointer
     }
 
+    #[must_use]
     pub const fn memory(&self) -> &[u8] {
         &self.memory
     }
@@ -125,7 +121,7 @@ impl<R: Read, W: Write> VirtualMachine<R, W> {
 
     #[must_use]
     pub fn step(&mut self) -> Option<Result<Instruction, RuntimeError>> {
-        let instruction = *self.program.get(self.pc)?;
+        let instruction = *self.program.0.get(self.pc)?;
         self.pc += 1;
         Some(self.exec(instruction).map(|_| instruction))
     }
@@ -153,19 +149,19 @@ mod tests {
 
     #[test]
     fn starts_with_zero_at_cell_zero() {
-        assert_interpret(vec![I::Output], "", "\0")
+        assert_interpret(Program(vec![I::Output]), "", "\0")
     }
 
     #[test]
     fn copies_input_with_cat() {
         assert_interpret(
-            vec![
+            Program(vec![
                 I::Input,
                 I::JumpRightZ(3),
                 I::Output,
                 I::Input,
                 I::JumpLeftNz(3),
-            ],
+            ]),
             "Hello, world!",
             "Hello, world!",
         )
@@ -174,14 +170,14 @@ mod tests {
     #[test]
     fn reverses_increment_with_decrement() {
         assert_interpret(
-            vec![
+            Program(vec![
                 I::Input,
                 I::MutCell(1),
                 I::MutCell(-1),
                 I::MutCell(-1),
                 I::MutCell(1),
                 I::Output,
-            ],
+            ]),
             "x",
             "x",
         )
@@ -190,14 +186,14 @@ mod tests {
     #[test]
     fn reverses_right_with_left() {
         assert_interpret(
-            vec![
+            Program(vec![
                 I::Input,
                 I::MutPointer(1),
                 I::MutPointer(-1),
                 I::MutPointer(-1),
                 I::MutPointer(1),
                 I::Output,
-            ],
+            ]),
             "A",
             "A",
         )
@@ -206,13 +202,13 @@ mod tests {
     #[test]
     fn zeroes_cell_with_loop() {
         assert_interpret(
-            vec![
+            Program(vec![
                 I::Input,
                 I::JumpRightZ(2),
                 I::MutCell(-1),
                 I::JumpLeftNz(2),
                 I::Output,
-            ],
+            ]),
             "X",
             "\0",
         )
@@ -220,15 +216,18 @@ mod tests {
 
     #[test]
     fn wraps_around_mut_pointer_without_strict() {
-        let mut vm = VirtualMachine::new_std_default(vec![I::MutPointer(-1)]);
+        let mut vm = VirtualMachine::new_std_default(Program(vec![I::MutPointer(-1)]));
         vm.run().unwrap();
         assert_eq!(vm.pointer as u32, Settings::DEFAULT_LENGTH - 1);
     }
 
     #[test]
     fn reaches_all_values_with_mut_cell() {
-        let mut vm =
-            VirtualMachine::new_std_default(vec![I::MutCell(127), I::SetCell(0), I::MutCell(-128)]);
+        let mut vm = VirtualMachine::new_std_default(Program(vec![
+            I::MutCell(127),
+            I::SetCell(0),
+            I::MutCell(-128),
+        ]));
         assert_eq!(vm.step(), Some(Ok(I::MutCell(127))));
         assert_eq!(*vm.c(), 127);
         assert_eq!(vm.step(), Some(Ok(I::SetCell(0))));
@@ -238,7 +237,10 @@ mod tests {
 
     #[test]
     fn returns_error_on_cell_overflow_with_strict() {
-        let mut vm = VirtualMachine::new_std_strict(vec![I::MutCell(-1)]);
+        let mut vm = VirtualMachine::new_std(
+            Program(vec![I::MutCell(-1)]),
+            Settings::default().with_strict(),
+        );
         assert_eq!(
             vm.run(),
             Err(RuntimeError::CellOverflow {
@@ -251,7 +253,10 @@ mod tests {
 
     #[test]
     fn returns_error_on_pointer_overflow_with_strict() {
-        let mut vm = VirtualMachine::new_std_strict(vec![I::MutPointer(3), I::MutPointer(-5)]);
+        let mut vm = VirtualMachine::new_std(
+            Program(vec![I::MutPointer(3), I::MutPointer(-5)]),
+            Settings::default().with_strict(),
+        );
         assert_eq!(
             vm.run(),
             Err(RuntimeError::TapeOverflow { from: 3, by: -5 })
@@ -261,7 +266,7 @@ mod tests {
     #[test]
     fn wraps_around_custom_tape_length_without_strict() {
         let mut vm = VirtualMachine::new_std(
-            vec![I::MutCell(13), I::MutPointer(21)],
+            Program(vec![I::MutCell(13), I::MutPointer(21)]),
             Settings::try_new(21, false, false).unwrap(),
         );
         vm.run().unwrap();

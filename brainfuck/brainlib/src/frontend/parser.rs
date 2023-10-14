@@ -17,7 +17,7 @@ enum Context {
     InsideLoop,
 }
 
-pub fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
+pub(crate) fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
     parse_proc(&mut tokens.into_iter(), Context::Root)
 }
 
