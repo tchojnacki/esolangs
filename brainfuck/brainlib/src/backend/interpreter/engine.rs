@@ -15,7 +15,7 @@ pub enum RuntimeError {
 }
 
 #[must_use]
-pub struct VirtualMachine<In: Read, Out: Write> {
+pub struct Engine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
     pointer: usize,
@@ -25,9 +25,9 @@ pub struct VirtualMachine<In: Read, Out: Write> {
     write: Out,
 }
 
-pub type VirtualMachineStd = VirtualMachine<Stdin, Stdout>;
+pub type StdEngine = Engine<Stdin, Stdout>;
 
-impl VirtualMachineStd {
+impl StdEngine {
     pub fn new_std(program: Program, settings: Settings) -> Self {
         Self::new(program, settings, stdin(), stdout())
     }
@@ -37,7 +37,24 @@ impl VirtualMachineStd {
     }
 }
 
-impl<In: Read, Out: Write> VirtualMachine<In, Out> {
+pub type ByteEngine<'io> = Engine<&'io [u8], &'io mut Vec<u8>>;
+
+impl<'io> ByteEngine<'io> {
+    pub fn new_byte(
+        program: Program,
+        settings: Settings,
+        input: &'io [u8],
+        output: &'io mut Vec<u8>,
+    ) -> Self {
+        Self::new(program, settings, input, output)
+    }
+
+    pub fn new_byte_default(program: Program, input: &'io [u8], output: &'io mut Vec<u8>) -> Self {
+        Self::new_byte(program, Settings::default(), input, output)
+    }
+}
+
+impl<In: Read, Out: Write> Engine<In, Out> {
     pub fn new(program: Program, settings: Settings, read: In, write: Out) -> Self {
         Self {
             program,
@@ -136,13 +153,12 @@ impl<In: Read, Out: Write> VirtualMachine<In, Out> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Instruction as I, Program, RuntimeError, Settings, VirtualMachine};
+    use super::{Engine, Instruction as I, Program, RuntimeError, Settings};
 
     fn assert_interpret(program: Program, input: &str, output: &str) {
         let mut buffer = Vec::new();
-        let mut vm =
-            VirtualMachine::new(program, Settings::default(), input.as_bytes(), &mut buffer);
-        let res = vm.run();
+        let mut eng = Engine::new_byte_default(program, input.as_bytes(), &mut buffer);
+        let res = eng.run();
         assert_eq!(res, Ok(()));
         assert_eq!(buffer, output.as_bytes());
     }
@@ -216,33 +232,33 @@ mod tests {
 
     #[test]
     fn wraps_around_mut_pointer_without_strict() {
-        let mut vm = VirtualMachine::new_std_default(Program(vec![I::MutPointer(-1)]));
-        vm.run().unwrap();
-        assert_eq!(vm.pointer as u32, Settings::DEFAULT_LENGTH - 1);
+        let mut eng = Engine::new_std_default(Program(vec![I::MutPointer(-1)]));
+        eng.run().unwrap();
+        assert_eq!(eng.pointer as u32, Settings::DEFAULT_LENGTH - 1);
     }
 
     #[test]
     fn reaches_all_values_with_mut_cell() {
-        let mut vm = VirtualMachine::new_std_default(Program(vec![
+        let mut eng = Engine::new_std_default(Program(vec![
             I::MutCell(127),
             I::SetCell(0),
             I::MutCell(-128),
         ]));
-        assert_eq!(vm.step(), Some(Ok(I::MutCell(127))));
-        assert_eq!(*vm.c(), 127);
-        assert_eq!(vm.step(), Some(Ok(I::SetCell(0))));
-        assert_eq!(vm.step(), Some(Ok(I::MutCell(-128))));
-        assert_eq!(*vm.c(), 128);
+        assert_eq!(eng.step(), Some(Ok(I::MutCell(127))));
+        assert_eq!(*eng.c(), 127);
+        assert_eq!(eng.step(), Some(Ok(I::SetCell(0))));
+        assert_eq!(eng.step(), Some(Ok(I::MutCell(-128))));
+        assert_eq!(*eng.c(), 128);
     }
 
     #[test]
     fn returns_error_on_cell_overflow_with_strict() {
-        let mut vm = VirtualMachine::new_std(
+        let mut eng = Engine::new_std(
             Program(vec![I::MutCell(-1)]),
             Settings::default().with_strict(),
         );
         assert_eq!(
-            vm.run(),
+            eng.run(),
             Err(RuntimeError::CellOverflow {
                 at: 0,
                 from: 0,
@@ -253,23 +269,23 @@ mod tests {
 
     #[test]
     fn returns_error_on_pointer_overflow_with_strict() {
-        let mut vm = VirtualMachine::new_std(
+        let mut eng = Engine::new_std(
             Program(vec![I::MutPointer(3), I::MutPointer(-5)]),
             Settings::default().with_strict(),
         );
         assert_eq!(
-            vm.run(),
+            eng.run(),
             Err(RuntimeError::TapeOverflow { from: 3, by: -5 })
         )
     }
 
     #[test]
     fn wraps_around_custom_tape_length_without_strict() {
-        let mut vm = VirtualMachine::new_std(
+        let mut eng = Engine::new_std(
             Program(vec![I::MutCell(13), I::MutPointer(21)]),
             Settings::try_new(21, false, false).unwrap(),
         );
-        vm.run().unwrap();
-        assert_eq!(*vm.c(), 13);
+        eng.run().unwrap();
+        assert_eq!(*eng.c(), 13);
     }
 }

@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 
 use args::Arguments;
-use brainlib::{interpreter::VirtualMachine, Program, Settings};
+use brainlib::{interpreter::Engine, Program, Settings};
 use clap::Parser;
 use debugger::run_debugger;
 use errors::{show_error, CliError};
@@ -28,9 +28,9 @@ fn run() -> Result<(), String> {
     let debug = settings.debug();
     let source = args.input.get_source()?;
     let program = Program::compile(&source, &settings).map_err(|e| e.message(&source))?;
-    let mut vm = VirtualMachine::new_std(program, settings);
+    let mut eng = Engine::new_std(program, settings);
     match debug {
-        true => run_debugger(vm, &source),
-        false => vm.run().map_err(|e| e.message(&source)),
+        true => run_debugger(eng, &source),
+        false => eng.run().map_err(|e| e.message(&source)),
     }
 }

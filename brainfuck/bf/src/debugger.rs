@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use brainlib::{interpreter::VirtualMachineStd, Instruction};
+use brainlib::{interpreter::StdEngine, Instruction};
 use colored::Colorize;
 use indoc::indoc;
 use rustyline::{error::ReadlineError, DefaultEditor};
@@ -16,10 +16,10 @@ enum ReplAction {
     EndSilently,
 }
 
-pub fn run_debugger(mut vm: VirtualMachineStd, source: &str) -> Result<(), String> {
+pub fn run_debugger(mut eng: StdEngine, source: &str) -> Result<(), String> {
     macro_rules! enter_repl {
         () => {
-            match repl(&mut vm, source) {
+            match repl(&mut eng, source) {
                 Ok(ReplAction::Resume) => show("Resuming execution..."),
                 Ok(ReplAction::Quit) => {
                     show("Aborting due to a quit from REPL.");
@@ -31,7 +31,7 @@ pub fn run_debugger(mut vm: VirtualMachineStd, source: &str) -> Result<(), Strin
         };
     }
 
-    while let Some(result) = vm.step() {
+    while let Some(result) = eng.step() {
         if let Ok(Instruction::Breakpoint(pos)) = result {
             show(
                 highlight_source(
@@ -53,7 +53,7 @@ pub fn run_debugger(mut vm: VirtualMachineStd, source: &str) -> Result<(), Strin
     Ok(())
 }
 
-fn repl(vm: &mut VirtualMachineStd, source: &str) -> Result<ReplAction, ReadlineError> {
+fn repl(eng: &mut StdEngine, source: &str) -> Result<ReplAction, ReadlineError> {
     macro_rules! unwrap_action {
         ($action:expr) => {
             if let Some(action) = $action {
@@ -75,28 +75,28 @@ fn repl(vm: &mut VirtualMachineStd, source: &str) -> Result<ReplAction, Readline
         rl.add_history_entry(&command)?;
         let parts = command.split_whitespace().collect::<Vec<_>>();
         match parts.as_slice() {
-            [":c" | ":code"] => exec_code(vm),
+            [":c" | ":code"] => exec_code(eng),
             [":h" | ":help"] => exec_help(),
-            [":m" | ":memory"] => exec_memory(vm, None),
-            [":m" | ":memory", c] => exec_memory(vm, Some(c)),
+            [":m" | ":memory"] => exec_memory(eng, None),
+            [":m" | ":memory", c] => exec_memory(eng, Some(c)),
             [":r" | ":resume"] => return Ok(ReplAction::Resume),
-            [":s" | ":step"] => unwrap_action!(exec_step(vm, source, None)),
-            [":s" | ":step", n] => unwrap_action!(exec_step(vm, source, Some(n))),
+            [":s" | ":step"] => unwrap_action!(exec_step(eng, source, None)),
+            [":s" | ":step", n] => unwrap_action!(exec_step(eng, source, Some(n))),
             [":q" | ":quit"] => return Ok(ReplAction::Quit),
             _ => show("Invalid command or arguments! Use :h to see all commands."),
         }
     }
 }
 
-fn exec_code(vm: &VirtualMachineStd) {
-    let source = vm
+fn exec_code(eng: &StdEngine) {
+    let source = eng
         .program()
         .code()
         .iter()
         .map(|i| i.to_string())
         .collect::<String>();
 
-    show(highlight_code(&source, vm.pc(), &format!("PC: {}", vm.pc())).as_str());
+    show(highlight_code(&source, eng.pc(), &format!("PC: {}", eng.pc())).as_str());
 }
 
 fn exec_help() {
@@ -110,20 +110,23 @@ fn exec_help() {
           :h, :help          Display the list of available commands"});
 }
 
-fn exec_memory(vm: &VirtualMachineStd, c: Option<&str>) {
-    let c = c.unwrap_or(&vm.pointer().to_string()).parse::<usize>().ok();
+fn exec_memory(eng: &StdEngine, c: Option<&str>) {
+    let c = c
+        .unwrap_or(&eng.pointer().to_string())
+        .parse::<usize>()
+        .ok();
     let Some(c) = c else {
         show("Invalid cell number!");
         return;
     };
-    if c >= vm.settings().tape_length() {
+    if c >= eng.settings().tape_length() {
         show("Cell number out of range!");
         return;
     }
 
     let cell = |offset: i32| -> String {
-        let i = (c as i32 + offset).rem_euclid(vm.settings().tape_length() as i32) as usize;
-        format!("[{:0>3}]", vm.memory()[i])
+        let i = (c as i32 + offset).rem_euclid(eng.settings().tape_length() as i32) as usize;
+        format!("[{:0>3}]", eng.memory()[i])
     };
 
     show(
@@ -140,7 +143,7 @@ fn exec_memory(vm: &VirtualMachineStd, c: Option<&str>) {
     );
 }
 
-fn exec_step(vm: &mut VirtualMachineStd, source: &str, n: Option<&str>) -> Option<ReplAction> {
+fn exec_step(eng: &mut StdEngine, source: &str, n: Option<&str>) -> Option<ReplAction> {
     let Some(n) = n.unwrap_or("1").parse::<NonZeroUsize>().ok() else {
         show("Invalid number of steps!");
         return None;
@@ -148,7 +151,7 @@ fn exec_step(vm: &mut VirtualMachineStd, source: &str, n: Option<&str>) -> Optio
 
     show(format!("Executing up to {n} next instructions...").as_str());
     for _ in 0..n.into() {
-        match vm.step() {
+        match eng.step() {
             Some(Ok(instr)) => show(format!("  {instr}").as_str()),
             Some(Err(err)) => {
                 show_error(&err.message(source));

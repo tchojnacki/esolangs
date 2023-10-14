@@ -1,3 +1,3 @@
-mod vm;
+mod engine;
 
-pub use vm::{RuntimeError, VirtualMachine, VirtualMachineStd};
+pub use engine::{ByteEngine, Engine, RuntimeError, StdEngine};

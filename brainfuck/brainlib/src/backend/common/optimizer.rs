@@ -251,7 +251,7 @@ mod tests {
     use test_case::test_case;
 
     use super::{optimize, Program, Settings, I};
-    use crate::interpreter::VirtualMachine;
+    use crate::interpreter::Engine;
 
     fn rand_range<T, R>(gen: &mut Gen, range: R) -> T
     where
@@ -465,15 +465,15 @@ mod tests {
     #[quickcheck]
     fn creates_equivalent_code(program: SimpleProgram, settings: Settings) -> bool {
         let before = program.0;
-        let mut before_vm = VirtualMachine::new_std(before.clone(), settings.clone());
-        let before_res = before_vm.run();
+        let mut before_eng = Engine::new_std(before.clone(), settings.clone());
+        let before_res = before_eng.run();
 
         let after = optimize(before, &settings);
-        let mut after_vm = VirtualMachine::new_std(after, settings);
-        let after_res = after_vm.run();
+        let mut after_eng = Engine::new_std(after, settings);
+        let after_res = after_eng.run();
 
         match before_res.is_ok() {
-            true => after_res.is_ok() && before_vm.memory() == after_vm.memory(),
+            true => after_res.is_ok() && before_eng.memory() == after_eng.memory(),
             false => after_res.is_err(),
         }
     }
