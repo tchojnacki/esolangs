@@ -1,3 +1,7 @@
 mod engine;
+mod runtime_error;
 
-pub use engine::{ByteEngine, Engine, RuntimeError, StdEngine};
+pub use self::{
+    engine::{ByteEngine, Engine, StdEngine},
+    runtime_error::RuntimeError,
+};

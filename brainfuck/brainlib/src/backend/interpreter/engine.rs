@@ -2,19 +2,12 @@ use std::io::{stdin, stdout, Read, Stdin, Stdout, Write};
 
 use crate::{
     backend::common::{instruction::Instruction, program::Program, settings::Settings},
+    interpreter::RuntimeError,
     util::{read_byte, write_byte},
 };
 
 #[must_use]
-#[derive(Debug, PartialEq)]
-pub enum RuntimeError {
-    InputError,
-    OutputError,
-    TapeOverflow { from: u32, by: i32 },
-    CellOverflow { at: u32, from: u8, by: i8 },
-}
-
-#[must_use]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Engine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
@@ -253,10 +246,7 @@ mod tests {
 
     #[test]
     fn returns_error_on_cell_overflow_with_strict() {
-        let mut eng = Engine::new_std(
-            Program(vec![I::MutCell(-1)]),
-            Settings::default().with_strict(),
-        );
+        let mut eng = Engine::new_std(Program(vec![I::MutCell(-1)]), Settings::new().with_strict());
         assert_eq!(
             eng.run(),
             Err(RuntimeError::CellOverflow {
@@ -271,7 +261,7 @@ mod tests {
     fn returns_error_on_pointer_overflow_with_strict() {
         let mut eng = Engine::new_std(
             Program(vec![I::MutPointer(3), I::MutPointer(-5)]),
-            Settings::default().with_strict(),
+            Settings::new().with_strict(),
         );
         assert_eq!(
             eng.run(),

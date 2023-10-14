@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Instruction {
     MutPointer(i32),
     MutCell(i8),

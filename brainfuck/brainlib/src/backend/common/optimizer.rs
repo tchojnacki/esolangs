@@ -285,12 +285,11 @@ mod tests {
     impl Arbitrary for Settings {
         fn arbitrary(g: &mut Gen) -> Self {
             let len = *g.choose(&[3, 10, 100, 256, 1024]).unwrap();
-            g.choose(&[
+            *g.choose(&[
                 Settings::try_new(len, false, false).unwrap(),
                 Settings::try_new(len, true, false).unwrap(),
             ])
             .unwrap()
-            .clone()
         }
     }
 
@@ -465,7 +464,7 @@ mod tests {
     #[quickcheck]
     fn creates_equivalent_code(program: SimpleProgram, settings: Settings) -> bool {
         let before = program.0;
-        let mut before_eng = Engine::new_std(before.clone(), settings.clone());
+        let mut before_eng = Engine::new_std(before.clone(), settings);
         let before_res = before_eng.run();
 
         let after = optimize(before, &settings);

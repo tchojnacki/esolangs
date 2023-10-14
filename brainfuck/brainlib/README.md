@@ -7,8 +7,8 @@
 
 ```Rust
 let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
-let program = Program::compile(source, &Settings::default()).expect("Parse error!");
-VirtualMachine::new_std_default(program).run().expect("Runtime error!");
+let program = Program::compile(source, &Settings::new()).expect("Parse error!");
+Engine::new_std_default(program).run().expect("Runtime error!");
 ```
 
 ## Features
@@ -21,4 +21,3 @@ VirtualMachine::new_std_default(program).run().expect("Runtime error!");
 
 - Other targets (WASM, JIT).
 - Documentation for public API.
-- Better encapsulation.

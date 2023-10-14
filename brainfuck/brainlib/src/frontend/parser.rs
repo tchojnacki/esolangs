@@ -1,14 +1,10 @@
-use crate::frontend::{
-    ast::{Node, Tree},
-    token::{Token, TokenKind},
+use crate::{
+    frontend::{
+        ast::{Node, Tree},
+        token::{Token, TokenKind},
+    },
+    ParseError,
 };
-
-#[must_use]
-#[derive(Debug, PartialEq)]
-pub enum ParseError {
-    UnexpectedLoopEnd(usize),
-    MissingLoopEnd,
-}
 
 #[must_use]
 #[derive(Clone, Copy)]

@@ -1,5 +1,5 @@
 #[must_use]
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Settings {
     tape_length: u32,
     strict: bool,

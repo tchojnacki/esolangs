@@ -3,6 +3,9 @@ name = "brainlib"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+thiserror = "1.0.49"
+
 [dev-dependencies]
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"

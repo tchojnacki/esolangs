@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use super::{emitter::emit, instruction::Instruction, optimizer::optimize};
 use crate::{
     frontend::{lexer::tokenize, parser::parse},
@@ -5,7 +7,7 @@ use crate::{
 };
 
 #[must_use]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Eq, PartialEq, Debug, Default)]
 pub struct Program(pub(crate) Vec<Instruction>);
 
 impl Program {
@@ -14,6 +16,10 @@ impl Program {
         let ast = parse(tokens)?;
         let program = emit(&ast);
         Ok(optimize(program, settings))
+    }
+
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn code(&self) -> &[Instruction] {
@@ -26,5 +32,14 @@ impl Program {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+}
+
+impl Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for instruction in &self.0 {
+            write!(f, "{}", instruction)?;
+        }
+        Ok(())
     }
 }
