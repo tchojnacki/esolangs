@@ -10,15 +10,15 @@ use crate::{
 pub enum RuntimeError {
     InputError,
     OutputError,
-    TapeOverflow { from: usize, by: i32 },
-    CellOverflow { at: usize, from: u8, by: i8 },
+    TapeOverflow { from: u32, by: i32 },
+    CellOverflow { at: u32, from: u8, by: i8 },
 }
 
 #[must_use]
 pub struct Engine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
-    pointer: usize,
+    pointer: u32,
     memory: Box<[u8]>,
     settings: Settings,
     read: In,
@@ -60,7 +60,7 @@ impl<In: Read, Out: Write> Engine<In, Out> {
             program,
             pc: 0,
             pointer: 0,
-            memory: vec![0; settings.tape_length()].into_boxed_slice(),
+            memory: vec![0; settings.tape_length() as usize].into_boxed_slice(),
             settings,
             read,
             write,
@@ -77,7 +77,7 @@ impl<In: Read, Out: Write> Engine<In, Out> {
     }
 
     #[must_use]
-    pub const fn pointer(&self) -> usize {
+    pub const fn pointer(&self) -> u32 {
         self.pointer
     }
 
@@ -92,7 +92,7 @@ impl<In: Read, Out: Write> Engine<In, Out> {
 
     #[must_use]
     fn c(&mut self) -> &mut u8 {
-        &mut self.memory[self.pointer]
+        &mut self.memory[self.pointer as usize]
     }
 
     fn exec(&mut self, instruction: Instruction) -> Result<(), RuntimeError> {
@@ -234,7 +234,7 @@ mod tests {
     fn wraps_around_mut_pointer_without_strict() {
         let mut eng = Engine::new_std_default(Program(vec![I::MutPointer(-1)]));
         eng.run().unwrap();
-        assert_eq!(eng.pointer as u32, Settings::DEFAULT_LENGTH - 1);
+        assert_eq!(eng.pointer, Settings::DEFAULT_LENGTH - 1);
     }
 
     #[test]

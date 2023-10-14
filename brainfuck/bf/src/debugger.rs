@@ -111,10 +111,7 @@ fn exec_help() {
 }
 
 fn exec_memory(eng: &StdEngine, c: Option<&str>) {
-    let c = c
-        .unwrap_or(&eng.pointer().to_string())
-        .parse::<usize>()
-        .ok();
+    let c = c.unwrap_or(&eng.pointer().to_string()).parse::<u32>().ok();
     let Some(c) = c else {
         show("Invalid cell number!");
         return;

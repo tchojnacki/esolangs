@@ -36,8 +36,8 @@ impl Settings {
     }
 
     #[must_use]
-    pub const fn tape_length(&self) -> usize {
-        self.tape_length as usize
+    pub const fn tape_length(&self) -> u32 {
+        self.tape_length
     }
 
     #[must_use]
@@ -87,11 +87,11 @@ impl Settings {
     }
 
     #[must_use]
-    pub(crate) const fn mut_pointer(&self, pointer: usize, change: i32) -> Option<usize> {
+    pub(crate) const fn mut_pointer(&self, pointer: u32, change: i32) -> Option<u32> {
         let new = pointer as i32 + change;
         if self.strict && (new < 0 || new >= self.tape_length as i32) {
             return None;
         }
-        Some(new.rem_euclid(self.tape_length as i32) as usize)
+        Some(new.rem_euclid(self.tape_length as i32) as u32)
     }
 }
