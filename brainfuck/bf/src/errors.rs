@@ -10,13 +10,13 @@ pub trait CliError {
 impl CliError for ParseError {
     fn message(&self, source: &str) -> String {
         match self {
-            ParseError::UnexpectedLoopEnd(pos) => highlight_source(
+            ParseError::UnexpectedLoopEnd { end_pos } => highlight_source(
                 "ParseError: Unexpected loop end.",
                 source,
-                *pos,
+                *end_pos,
                 "this bracket is unmatched",
             ),
-            ParseError::MissingLoopEnd => highlight_source(
+            ParseError::MissingLoopEnd { .. } => highlight_source(
                 "ParseError: Missing loop end.",
                 source,
                 source.len(),

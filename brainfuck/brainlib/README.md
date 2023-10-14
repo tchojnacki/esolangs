@@ -15,9 +15,8 @@ Engine::new_std_default(program).run().expect("Runtime error!");
 
 - Fully implemented: lexer, parser, bytecode generator, optimizer, interpreter.
 - Covered by unit and property tests.
-- No runtime dependencies.
+- No unsafe code.
 
 ## TODO
 
 - Other targets (WASM, JIT).
-- Documentation for public API.

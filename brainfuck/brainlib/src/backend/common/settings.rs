@@ -1,3 +1,16 @@
+/// Conventions used for compilation and interpretation.
+///
+/// This includes:
+/// - **tape length** - how many data cells are available
+/// - **strictness** - should an overflow in a data cell or the pointer be treated as an error
+/// - **debugging** - should the breakpoints be enabled or ignored
+///
+/// ```
+/// # use std::error::Error;
+/// # use brainlib::Settings;
+/// let settings = Settings::try_new(1000, true, false).ok_or("invalid settings")?;
+/// # Ok::<(), Box<dyn Error>>(())
+/// ```
 #[must_use]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Settings {
@@ -17,12 +30,19 @@ impl Default for Settings {
 }
 
 impl Settings {
+    /// Default tape length, conventionally equal to 30 000.
     pub const DEFAULT_LENGTH: u32 = 30_000;
 
+    /// Same as [`Settings::default`], returns the default settings.
+    ///
+    /// Here, tape length is 30 000, strictness is disabled and debugging is disabled.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Creates new settings with given parameters.
+    ///
+    /// `tape_length` must be between 3 and 1 billion (inclusive).
     #[must_use]
     pub const fn try_new(tape_length: u32, strict: bool, debug: bool) -> Option<Self> {
         match tape_length {
@@ -35,21 +55,25 @@ impl Settings {
         }
     }
 
+    /// Returns the set tape length.
     #[must_use]
     pub const fn tape_length(&self) -> u32 {
         self.tape_length
     }
 
+    /// Returns the set strictness.
     #[must_use]
     pub const fn strict(&self) -> bool {
         self.strict
     }
 
+    /// Returns the set debugging.
     #[must_use]
     pub const fn debug(&self) -> bool {
         self.debug
     }
 
+    /// Returns the [`Settings`] with same parameters, but with strictness enabled.
     pub const fn with_strict(self) -> Self {
         Self {
             strict: true,
@@ -57,6 +81,7 @@ impl Settings {
         }
     }
 
+    /// Returns the [`Settings`] with same parameters, but with strictness disabled.
     pub const fn without_strict(self) -> Self {
         Self {
             strict: false,
@@ -64,6 +89,7 @@ impl Settings {
         }
     }
 
+    /// Returns the [`Settings`] with same parameters, but with debugging enabled.
     pub const fn with_debug(self) -> Self {
         Self {
             debug: true,
@@ -71,6 +97,7 @@ impl Settings {
         }
     }
 
+    /// Returns the [`Settings`] with same parameters, but with debugging disabled.
     pub const fn without_debug(self) -> Self {
         Self {
             debug: false,

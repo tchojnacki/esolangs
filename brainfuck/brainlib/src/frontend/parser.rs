@@ -4,7 +4,7 @@ use crate::frontend::{Node, ParseError, Token, TokenKind, Tree};
 #[derive(Clone, Copy)]
 enum Context {
     Root,
-    InsideLoop,
+    InsideLoop(usize),
 }
 
 pub(crate) fn parse(tokens: impl IntoIterator<Item = Token>) -> Result<Tree, ParseError> {
@@ -25,17 +25,17 @@ fn parse_proc(
             TK::Decrement => N::Decrement,
             TK::Output => N::Output,
             TK::Input => N::Input,
-            TK::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop)?),
+            TK::StartLoop => N::Loop(parse_proc(tokens, C::InsideLoop(token.pos))?),
             TK::EndLoop =>
                 return match context {
-                    C::InsideLoop => Ok(result.into()),
-                    C::Root => Err(E::UnexpectedLoopEnd(token.pos)),
+                    C::InsideLoop(_) => Ok(result.into()),
+                    C::Root => Err(E::UnexpectedLoopEnd { end_pos: token.pos }),
                 },
             TK::Debug => N::Breakpoint(token.pos),
         });
     }
     match context {
-        C::InsideLoop => Err(E::MissingLoopEnd),
+        C::InsideLoop(start_pos) => Err(E::MissingLoopEnd { start_pos }),
         C::Root => Ok(result.into()),
     }
 }
@@ -94,7 +94,7 @@ mod tests {
                 ]
                 .into_iter()
             ),
-            Err(ParseError::UnexpectedLoopEnd(1))
+            Err(ParseError::UnexpectedLoopEnd { end_pos: 1 })
         )
     }
 
@@ -118,7 +118,7 @@ mod tests {
                 ]
                 .into_iter()
             ),
-            Err(ParseError::MissingLoopEnd)
+            Err(ParseError::MissingLoopEnd { start_pos: 0 })
         )
     }
 }

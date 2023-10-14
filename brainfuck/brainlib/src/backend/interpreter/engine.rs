@@ -6,6 +6,7 @@ use crate::{
     util::{read_byte, write_byte},
 };
 
+/// A generic representation of the interpreter's engine state.
 #[must_use]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Engine<In: Read, Out: Write> {
@@ -18,21 +19,26 @@ pub struct Engine<In: Read, Out: Write> {
     write: Out,
 }
 
+/// An engine which operates on [`Stdin`] and [`Stdout`].
 pub type StdEngine = Engine<Stdin, Stdout>;
 
 impl StdEngine {
+    /// Creates a new [`StdEngine`] with the provided [`Program`] and [`Settings`].
     pub fn new_std(program: Program, settings: Settings) -> Self {
         Self::new(program, settings, stdin(), stdout())
     }
 
+    /// Same as [`StdEngine::new_std`], but uses [`Settings::default`].
     pub fn new_std_default(program: Program) -> Self {
         Self::new_std(program, Settings::default())
     }
 }
 
+/// An engine which reads from `&[u8]` and writes to `&mut Vec<u8>`.
 pub type ByteEngine<'io> = Engine<&'io [u8], &'io mut Vec<u8>>;
 
 impl<'io> ByteEngine<'io> {
+    /// Creates a new [`ByteEngine`] with the provided [`Program`] and [`Settings`].
     pub fn new_byte(
         program: Program,
         settings: Settings,
@@ -42,12 +48,14 @@ impl<'io> ByteEngine<'io> {
         Self::new(program, settings, input, output)
     }
 
+    /// Same as [`ByteEngine::new_byte`], but uses [`Settings::default`].
     pub fn new_byte_default(program: Program, input: &'io [u8], output: &'io mut Vec<u8>) -> Self {
         Self::new_byte(program, Settings::default(), input, output)
     }
 }
 
 impl<In: Read, Out: Write> Engine<In, Out> {
+    /// Creates a new [`Engine`] with the provided [`Program`], [`Settings`], input and output.
     pub fn new(program: Program, settings: Settings, read: In, write: Out) -> Self {
         Self {
             program,
@@ -60,25 +68,30 @@ impl<In: Read, Out: Write> Engine<In, Out> {
         }
     }
 
+    /// Returns the [`Program`] which the [`Engine`] is executing.
     pub const fn program(&self) -> &Program {
         &self.program
     }
 
+    /// Returns the current program counter.
     #[must_use]
     pub const fn pc(&self) -> usize {
         self.pc
     }
 
+    /// Returns the current cell pointer.
     #[must_use]
     pub const fn pointer(&self) -> u32 {
         self.pointer
     }
 
+    /// Returns a view into the memory (cell vector).
     #[must_use]
     pub const fn memory(&self) -> &[u8] {
         &self.memory
     }
 
+    /// Returns the used [`Settings`].
     pub const fn settings(&self) -> &Settings {
         &self.settings
     }
@@ -129,6 +142,7 @@ impl<In: Read, Out: Write> Engine<In, Out> {
         Ok(())
     }
 
+    /// Executes a single [`Instruction`] and returns it or a [`RuntimeError`].
     #[must_use]
     pub fn step(&mut self) -> Option<Result<Instruction, RuntimeError>> {
         let instruction = *self.program.0.get(self.pc)?;
@@ -136,6 +150,7 @@ impl<In: Read, Out: Write> Engine<In, Out> {
         Some(self.exec(instruction).map(|_| instruction))
     }
 
+    /// Runs the [`Engine`] until it halts or a [`RuntimeError`] occurs.
     pub fn run(&mut self) -> Result<(), RuntimeError> {
         while let Some(result) = self.step() {
             let _: Instruction = result?;
