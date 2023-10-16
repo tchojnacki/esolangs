@@ -25,6 +25,8 @@ jobs:
         run: cargo doc --lib --no-deps
       - name: Add index redirect
         run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='./brainlib'\" />" > ./target/doc/index.html
+      - name: Fix permissions
+        run: chmod -c -R +rX ./target/doc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
