@@ -23,6 +23,8 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Build docs
         run: cargo doc --lib --no-deps
+      - name: Add index redirect
+        run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='./brainlib'\" />" > ./target/doc/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
