@@ -23,8 +23,8 @@ impl Program {
     /// assert_eq!(program.to_string(), "+++");
     /// # Ok::<(), Box<dyn Error>>(())
     /// ```
-    pub fn compile(source: &str, settings: &Settings) -> Result<Self, ParseError> {
-        let tokens = tokenize(source);
+    pub fn compile(source: impl AsRef<str>, settings: &Settings) -> Result<Self, ParseError> {
+        let tokens = tokenize(source.as_ref());
         let ast = parse(tokens)?;
         let program = emit(&ast);
         Ok(optimize(program, settings))
