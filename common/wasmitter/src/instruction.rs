@@ -4,6 +4,7 @@ use crate::{
     indices::{DataIdx, FuncIdx, GlobalIdx, LabelIdx, LocalIdx, WasmIndex},
     module::Module,
     types::Func,
+    Expr, FuncType, ResultType, TypeIdx, ValType,
 };
 
 #[derive(Debug)]
@@ -45,9 +46,21 @@ impl Display for Sx {
 }
 
 #[derive(Default, Debug)]
-pub struct MemArg {
+pub struct MemArg<const N: usize> {
     offset: u32,
     align: u32,
+}
+
+impl<const N: usize> Display for MemArg<N> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.offset != 0 {
+            write!(f, " offset={}", self.offset)?;
+        }
+        if self.align != 0 {
+            write!(f, " align={}", self.align)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -56,6 +69,35 @@ pub enum Ww {
     W16,
     W32,
     W64,
+}
+
+#[derive(Debug)]
+pub enum BlockType {
+    Type(TypeIdx),
+    Val(Option<ValType>),
+}
+
+impl Default for BlockType {
+    fn default() -> Self {
+        Self::Val(None)
+    }
+}
+
+impl BlockType {
+    fn emit_wat_inline(&self, module: &Module) -> String {
+        let func_type = match self {
+            BlockType::Type(type_idx) => module.get_signature(*type_idx).clone(),
+            BlockType::Val(val_type) => FuncType {
+                params: ResultType(Vec::new()),
+                results: ResultType(match val_type {
+                    Some(val_type) => vec![val_type.clone()],
+                    None => Vec::new(),
+                }),
+            },
+        };
+
+        func_type.emit_wat_inline()
+    }
 }
 
 #[derive(Debug)]
@@ -190,27 +232,34 @@ pub enum Instr {
     GlobalGet(GlobalIdx),
     /// `global.set globalidx`
     GlobalSet(GlobalIdx),
-    /// `inn.load memarg`
-    ILoad(Nn, MemArg),
-    /// `fnn.load memarg`
-    FLoad(Nn, MemArg),
-    /// `inn.store memarg`
-    IStore(Nn, MemArg),
-    /// `fnn.store memarg`
-    FStore(Nn, MemArg),
-    /// `inn.load8_sx memarg`
-    ILoad8(Nn, Sx, MemArg),
-    /// `inn.load16_sx memarg`
-    ILoad16(Nn, Sx, MemArg),
-    /// `i64.load32_sx memarg`
-    I64Load32(Sx, MemArg),
-    /// `inn.store8 memarg`
-    IStore8(Nn, MemArg),
-    /// `inn.store16 memarg`
-    IStore16(Nn, MemArg),
-    /// `i64.store32 memarg`
-    I64Store32(MemArg),
-    // TODO: Vector instructions
+    /// `i32.load memarg4`
+    I32Load(MemArg<4>),
+    /// `i64.load memarg8`
+    I64Load(MemArg<8>),
+    /// `f32.load memarg4`
+    F32Load(MemArg<4>),
+    /// `f64.load memarg8`
+    F64Load(MemArg<8>),
+    /// `i32.store memarg4`
+    I32Store(MemArg<4>),
+    /// `i64.store memarg8`
+    I64Store(MemArg<8>),
+    /// `f32.store memarg4`
+    F32Store(MemArg<4>),
+    /// `f64.store memarg8`
+    F64Store(MemArg<8>),
+    /// `inn.load8_sx memarg1`
+    ILoad8(Nn, Sx, MemArg<1>),
+    /// `inn.load16_sx memarg2`
+    ILoad16(Nn, Sx, MemArg<2>),
+    /// `i64.load32_sx memarg4`
+    I64Load32(Sx, MemArg<4>),
+    /// `inn.store8 memarg1`
+    IStore8(Nn, MemArg<1>),
+    /// `inn.store16 memarg2`
+    IStore16(Nn, MemArg<2>),
+    /// `i64.store32 memarg4`
+    I64Store32(MemArg<4>),
     /// `memory.size`
     MemorySize,
     /// `memory.grow`
@@ -227,6 +276,10 @@ pub enum Instr {
     Nop,
     /// `unreachable`
     Unreachable,
+    /// `block blocktype instr* end`
+    Block(BlockType, Expr),
+    /// `loop blocktype instr* end`
+    Loop(BlockType, Expr),
     /// `br labelidx`
     Br(LabelIdx),
     /// `br_if labelidx`
@@ -238,16 +291,18 @@ pub enum Instr {
 }
 
 impl Instr {
-    pub(crate) fn emit_wat_inline(&self, module: &Module, func: Option<&Func>) -> String {
-        let ctx = || {
-            (
-                module,
-                func.expect("local instruction used outside of a function"),
-            )
-        };
+    pub(crate) fn emit_wat_block(
+        &self,
+        module: &Module,
+        func: Option<&Func>,
+        indent: usize,
+    ) -> String {
+        let tab = " ".repeat(indent);
+        let req_func = || func.expect("local instruction used outside of a function");
+        let ctx = || (module, req_func());
 
         format!(
-            "({})",
+            "{tab}({})\n",
             match self {
                 Instr::I32Const(val) => format!("i32.const {}", *val as i32),
                 Instr::I64Const(val) => format!("i64.const {}", *val as i64),
@@ -309,47 +364,48 @@ impl Instr {
                 Instr::FReinterpretI(nn) => format!("f{nn}.reinterpret_i{nn}"),
                 Instr::Drop => "drop".into(),
                 Instr::Select => "select".into(),
-                Instr::LocalGet(idx) => format!("local.get {}", idx.alias_or_index(ctx())),
-                Instr::LocalSet(idx) => format!("local.set {}", idx.alias_or_index(ctx())),
-                Instr::LocalTee(idx) => format!("local.tee {}", idx.alias_or_index(ctx())),
-                Instr::GlobalGet(idx) => format!("global.get {}", idx.alias_or_index(())),
-                Instr::GlobalSet(idx) => format!("global.set {}", idx.alias_or_index(())),
-                Instr::ILoad(nn, _) => format!("i{nn}.load"),
-                Instr::FLoad(nn, _) => format!("f{nn}.load"),
-                Instr::IStore(nn, _) => format!("i{nn}.store"),
-                Instr::FStore(nn, _) => format!("f{nn}.store"),
-                Instr::ILoad8(nn, sx, _) => format!("i{nn}.load8_{sx}"),
-                Instr::ILoad16(nn, sx, _) => format!("i{nn}.load16_{sx}"),
-                Instr::I64Load32(sx, _) => format!("i64.load32_{sx}"),
-                Instr::IStore8(nn, _) => format!("i{nn}.store8"),
-                Instr::IStore16(nn, _) => format!("i{nn}.store16"),
-                Instr::I64Store32(_) => "i64.store32".into(),
+                Instr::LocalGet(idx) => format!("local.get {}", idx.id_or_index(ctx())),
+                Instr::LocalSet(idx) => format!("local.set {}", idx.id_or_index(ctx())),
+                Instr::LocalTee(idx) => format!("local.tee {}", idx.id_or_index(ctx())),
+                Instr::GlobalGet(idx) => format!("global.get {}", idx.id_or_index(())),
+                Instr::GlobalSet(idx) => format!("global.set {}", idx.id_or_index(())),
+                Instr::I32Load(memarg) => format!("i32.load{memarg}"),
+                Instr::I64Load(memarg) => format!("i64.load{memarg}"),
+                Instr::F32Load(memarg) => format!("f32.load{memarg}"),
+                Instr::F64Load(memarg) => format!("f64.load{memarg}"),
+                Instr::I32Store(memarg) => format!("i32.store{memarg}"),
+                Instr::I64Store(memarg) => format!("i64.store{memarg}"),
+                Instr::F32Store(memarg) => format!("f32.store{memarg}"),
+                Instr::F64Store(memarg) => format!("f64.store{memarg}"),
+                Instr::ILoad8(nn, sx, memarg) => format!("i{nn}.load8_{sx}{memarg}"),
+                Instr::ILoad16(nn, sx, memarg) => format!("i{nn}.load16_{sx}{memarg}"),
+                Instr::I64Load32(sx, memarg) => format!("i64.load32_{sx}{memarg}"),
+                Instr::IStore8(nn, memarg) => format!("i{nn}.store8{memarg}"),
+                Instr::IStore16(nn, memarg) => format!("i{nn}.store16{memarg}"),
+                Instr::I64Store32(memarg) => format!("i64.store32{memarg}"),
                 Instr::MemorySize => "memory.size".into(),
                 Instr::MemoryGrow => "memory.grow".into(),
                 Instr::MemoryFill => "memory.fill".into(),
                 Instr::MemoryCopy => "memory.copy".into(),
-                Instr::MemoryInit(idx) => format!("memory.init {}", idx.alias_or_index(())),
-                Instr::DataDrop(idx) => format!("data.drop {}", idx.alias_or_index(())),
+                Instr::MemoryInit(idx) => format!("memory.init {}", idx.id_or_index(())),
+                Instr::DataDrop(idx) => format!("data.drop {}", idx.id_or_index(())),
                 Instr::Nop => "nop".into(),
                 Instr::Unreachable => "unreachable".into(),
-                Instr::Br(idx) => format!("br {}", idx.alias_or_index(())),
-                Instr::BrIf(idx) => format!("br_if {}", idx.alias_or_index(())),
+                Instr::Block(block_type, expr) => format!(
+                    "block {}\n{}{tab}",
+                    block_type.emit_wat_inline(module),
+                    expr.emit_wat_block(module, req_func(), indent + 2)
+                ),
+                Instr::Loop(block_type, expr) => format!(
+                    "loop {}\n{}{tab}",
+                    block_type.emit_wat_inline(module),
+                    expr.emit_wat_block(module, req_func(), indent + 2)
+                ),
+                Instr::Br(idx) => format!("br {}", idx.id_or_index(())),
+                Instr::BrIf(idx) => format!("br_if {}", idx.id_or_index(())),
                 Instr::Return => "return".into(),
-                Instr::Call(idx) => format!("call {}", idx.alias_or_index(module)),
+                Instr::Call(idx) => format!("call {}", idx.id_or_index(module)),
             }
-        )
-    }
-
-    pub(crate) fn emit_wat_block(
-        &self,
-        module: &Module,
-        func: Option<&Func>,
-        indent: usize,
-    ) -> String {
-        format!(
-            "{}{}\n",
-            " ".repeat(indent),
-            self.emit_wat_inline(module, func)
         )
     }
 }

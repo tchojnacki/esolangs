@@ -5,6 +5,7 @@ use crate::{
         Export, ExportDesc, Expr, Func, FuncType, Global, GlobalType, Import, ImportDesc, Limits,
         Mem, MemType, Mutability, ResultType, ValType,
     },
+    Id,
 };
 
 #[derive(Default, Debug)]
@@ -83,13 +84,13 @@ impl Module {
         &mut self,
         module: impl Into<String>,
         name: impl Into<String>,
-        alias: Option<&'static str>,
+        id: impl Into<Id>,
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
     ) -> FuncIdx {
         let module = module.into();
         let name = name.into();
-        let func_idx = FuncIdx::import(self.imports.len() as u32, alias);
+        let func_idx = FuncIdx::import(self.imports.len() as u32, id.into());
         let desc = ImportDesc::Func {
             type_idx: self.resolve_type(params, results),
             func_idx,
@@ -98,7 +99,7 @@ impl Module {
         func_idx
     }
 
-    pub fn func<B, E>(&mut self, alias: Option<&'static str>, builder: B) -> FuncIdx
+    pub fn func<B, E>(&mut self, id: impl Into<Id>, builder: B) -> FuncIdx
     where
         B: FnOnce(&mut FuncScope) -> E,
         E: Into<Expr>,
@@ -107,7 +108,7 @@ impl Module {
         let body = builder(&mut scope).into();
         let type_idx = self.resolve_type(scope.params, scope.results);
         let locals = scope.locals;
-        let func_idx = FuncIdx::define(self.funcs.len() as u32, alias);
+        let func_idx = FuncIdx::define(self.funcs.len() as u32, id.into());
         self.funcs.push(Func {
             type_idx,
             func_idx,
@@ -117,13 +118,8 @@ impl Module {
         func_idx
     }
 
-    pub fn memory(
-        &mut self,
-        alias: Option<&'static str>,
-        min_pages: u32,
-        max_pages: u32,
-    ) -> MemIdx {
-        let mem_idx = MemIdx::new(self.mems.len() as u32, alias);
+    pub fn memory(&mut self, id: impl Into<Id>, min_pages: u32, max_pages: u32) -> MemIdx {
+        let mem_idx = MemIdx::new(self.mems.len() as u32, id.into());
         self.mems.push(Mem {
             mem_type: MemType {
                 limits: Limits {
@@ -138,12 +134,12 @@ impl Module {
 
     pub fn global(
         &mut self,
-        alias: Option<&'static str>,
+        id: impl Into<Id>,
         mutability: Mutability,
         val_type: ValType,
         init: Instr,
     ) -> GlobalIdx {
-        let global_idx = GlobalIdx::new(self.globals.len() as u32, alias);
+        let global_idx = GlobalIdx::new(self.globals.len() as u32, id.into());
         self.globals.push(Global {
             global_type: GlobalType {
                 mutability,

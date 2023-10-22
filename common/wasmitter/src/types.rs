@@ -4,6 +4,25 @@ use crate::{
     module::Module,
 };
 
+#[derive(Clone, Copy, Debug)]
+pub struct Id(Option<&'static str>);
+
+impl Id {
+    pub fn none() -> Self {
+        Self(None)
+    }
+
+    pub(crate) fn into_option(self) -> Option<&'static str> {
+        self.0
+    }
+}
+
+impl From<&'static str> for Id {
+    fn from(alias: &'static str) -> Self {
+        Self(Some(alias))
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum NumType {
     I32,
@@ -188,7 +207,7 @@ impl Func {
 
         result.push_str(&format!(
             "{tab}(func {} {}\n",
-            self.func_idx.alias_or_comment(module),
+            self.func_idx.id_or_comment(module),
             func_type.emit_wat_inline()
         ));
 
@@ -211,7 +230,7 @@ impl Mem {
         format!(
             "{}(memory {} {} {})\n",
             " ".repeat(indent),
-            self.mem_idx.alias_or_comment(()),
+            self.mem_idx.id_or_comment(()),
             self.mem_type.limits.min,
             self.mem_type.limits.max
         )
@@ -227,12 +246,12 @@ pub struct Global {
 
 impl Global {
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
+        let tab = " ".repeat(indent);
         format!(
-            "{}(global {} {} {})\n",
-            " ".repeat(indent),
-            self.global_idx.alias_or_comment(()),
+            "{tab}(global {} {}\n{}{tab})\n",
+            self.global_idx.id_or_comment(()),
             self.global_type.emit_wat_inline(),
-            self.init.emit_wat_inline(module, None),
+            self.init.emit_wat_block(module, None, indent + 2),
         )
     }
 }
@@ -252,7 +271,7 @@ impl ImportDesc {
         match self {
             ImportDesc::Func { type_idx, func_idx } => {
                 let func_type = module.get_signature(*type_idx);
-                let alias = func_idx.alias_or_comment(module);
+                let alias = func_idx.id_or_comment(module);
                 format!("(func {} {})", alias, func_type.emit_wat_inline())
             },
             _ => unimplemented!(),
@@ -307,8 +326,8 @@ impl From<GlobalIdx> for ExportDesc {
 impl ExportDesc {
     pub(crate) fn emit_wat_inline(&self, module: &Module) -> String {
         match self {
-            ExportDesc::Func(func_idx) => format!("(func {})", func_idx.alias_or_index(module)),
-            ExportDesc::Mem(mem_idx) => format!("(memory {})", mem_idx.alias_or_index(())),
+            ExportDesc::Func(func_idx) => format!("(func {})", func_idx.id_or_index(module)),
+            ExportDesc::Mem(mem_idx) => format!("(memory {})", mem_idx.id_or_index(())),
             _ => unimplemented!(),
         }
     }

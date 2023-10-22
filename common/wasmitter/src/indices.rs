@@ -1,22 +1,22 @@
 use std::borrow::Cow;
 
-use crate::{module::Module, types::Func};
+use crate::{module::Module, types::Func, Id};
 
 pub(crate) trait WasmIndex<'a>: Clone + Copy {
     type Ctx;
 
     fn resolve(&self, ctx: Self::Ctx) -> u32;
-    fn alias(&self) -> Option<&'static str>;
+    fn id(&self) -> Id;
 
-    fn alias_or_comment(&self, ctx: Self::Ctx) -> Cow<'_, str> {
-        match self.alias() {
+    fn id_or_comment(&self, ctx: Self::Ctx) -> Cow<'_, str> {
+        match self.id().into_option() {
             Some(a) => a.into(),
             None => format!("(;{};)", self.resolve(ctx)).into(),
         }
     }
 
-    fn alias_or_index(&self, ctx: Self::Ctx) -> Cow<'_, str> {
-        match self.alias() {
+    fn id_or_index(&self, ctx: Self::Ctx) -> Cow<'_, str> {
+        match self.id().into_option() {
             Some(a) => a.into(),
             None => self.resolve(ctx).to_string().into(),
         }
@@ -41,8 +41,8 @@ impl WasmIndex<'_> for TypeIdx {
         self.index
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        None
+    fn id(&self) -> Id {
+        Id::none()
     }
 }
 
@@ -55,21 +55,21 @@ enum FuncIdxKind {
 #[derive(Clone, Copy, Debug)]
 pub struct FuncIdx {
     kind: FuncIdxKind,
-    alias: Option<&'static str>,
+    id: Id,
 }
 
 impl FuncIdx {
-    pub(crate) fn import(index: u32, alias: Option<&'static str>) -> Self {
+    pub(crate) fn import(index: u32, id: Id) -> Self {
         Self {
             kind: FuncIdxKind::Imported(index),
-            alias,
+            id,
         }
     }
 
-    pub(crate) fn define(index: u32, alias: Option<&'static str>) -> Self {
+    pub(crate) fn define(index: u32, id: Id) -> Self {
         Self {
             kind: FuncIdxKind::Defined(index),
-            alias,
+            id,
         }
     }
 }
@@ -84,20 +84,20 @@ impl<'a> WasmIndex<'a> for FuncIdx {
         }
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        self.alias
+    fn id(&self) -> Id {
+        self.id
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct MemIdx {
     index: u32,
-    alias: Option<&'static str>,
+    id: Id,
 }
 
 impl MemIdx {
-    pub(crate) fn new(index: u32, alias: Option<&'static str>) -> Self {
-        Self { index, alias }
+    pub(crate) fn new(index: u32, id: Id) -> Self {
+        Self { index, id }
     }
 }
 
@@ -108,20 +108,20 @@ impl WasmIndex<'_> for MemIdx {
         self.index
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        self.alias
+    fn id(&self) -> Id {
+        self.id
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct GlobalIdx {
     index: u32,
-    alias: Option<&'static str>,
+    id: Id,
 }
 
 impl GlobalIdx {
-    pub(crate) fn new(index: u32, alias: Option<&'static str>) -> Self {
-        Self { index, alias }
+    pub(crate) fn new(index: u32, id: Id) -> Self {
+        Self { index, id }
     }
 }
 
@@ -132,8 +132,8 @@ impl WasmIndex<'_> for GlobalIdx {
         self.index
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        self.alias
+    fn id(&self) -> Id {
+        self.id
     }
 }
 
@@ -147,8 +147,8 @@ impl WasmIndex<'_> for DataIdx {
         self.0
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        None
+    fn id(&self) -> Id {
+        Id::none()
     }
 }
 
@@ -188,8 +188,8 @@ impl<'a> WasmIndex<'a> for LocalIdx {
         }
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        None
+    fn id(&self) -> Id {
+        Id::none()
     }
 }
 
@@ -203,7 +203,13 @@ impl WasmIndex<'_> for LabelIdx {
         self.0
     }
 
-    fn alias(&self) -> Option<&'static str> {
-        None
+    fn id(&self) -> Id {
+        Id::none()
+    }
+}
+
+impl From<u32> for LabelIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }

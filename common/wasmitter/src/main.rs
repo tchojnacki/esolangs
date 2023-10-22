@@ -1,4 +1,4 @@
-use wasmitter::{Instr, MemArg, Module, Mutability, Nn, Sx, I32};
+use wasmitter::{BlockType, Id, Instr, MemArg, Module, Mutability, Nn, Sx, I32};
 
 pub fn main() {
     let mut module = Module::new();
@@ -6,22 +6,22 @@ pub fn main() {
     let fd_read = module.import_func(
         "wasi_unstable",
         "fd_read",
-        Some("$fd_read"),
+        "$fd_read",
         vec![I32, I32, I32, I32],
         I32,
     );
     let fd_write = module.import_func(
         "wasi_unstable",
         "fd_write",
-        Some("$fd_write"),
+        "$fd_write",
         vec![I32, I32, I32, I32],
         I32,
     );
 
-    let ptr = module.global(Some("$ptr"), Mutability::Mut, I32, Instr::I32Const(0));
-    let memory = module.memory(None, 1, 1);
+    let ptr = module.global("$ptr", Mutability::Mut, I32, Instr::I32Const(0));
+    let memory = module.memory(Id::none(), 1, 1);
 
-    let read_byte = module.func(Some("$read_byte"), |scope| {
+    let read_byte = module.func("$read_byte", |scope| {
         scope.add_result(I32);
         vec![
             Instr::I32Const(0),
@@ -31,16 +31,16 @@ pub fn main() {
             Instr::Call(fd_read),
             Instr::Drop,
             Instr::I32Const(30012),
-            Instr::ILoad(Nn::N32, MemArg::default()),
+            Instr::I32Load(MemArg::default()),
         ]
     });
 
-    let write_byte = module.func(Some("$write_byte"), |scope| {
+    let write_byte = module.func("$write_byte", |scope| {
         let value = scope.add_param(I32);
         vec![
             Instr::I32Const(30024),
             Instr::LocalGet(value),
-            Instr::IStore(Nn::N32, MemArg::default()),
+            Instr::I32Store(MemArg::default()),
             Instr::I32Const(1),
             Instr::I32Const(30016),
             Instr::I32Const(1),
@@ -50,7 +50,7 @@ pub fn main() {
         ]
     });
 
-    let mut_pointer = module.func(Some("$mut_pointer"), |scope| {
+    let mut_pointer = module.func("$mut_pointer", |scope| {
         let offset = scope.add_param(I32);
         vec![
             Instr::GlobalGet(ptr),
@@ -62,7 +62,7 @@ pub fn main() {
         ]
     });
 
-    let _mut_cell = module.func(Some("$mut_cell"), |scope| {
+    let mut_cell = module.func("$mut_cell", |scope| {
         let change = scope.add_param(I32);
         vec![
             Instr::GlobalGet(ptr),
@@ -76,7 +76,7 @@ pub fn main() {
         ]
     });
 
-    let set_cell = module.func(Some("$set_cell"), |scope| {
+    let set_cell = module.func("$set_cell", |scope| {
         let value = scope.add_param(I32);
         vec![
             Instr::GlobalGet(ptr),
@@ -85,11 +85,11 @@ pub fn main() {
         ]
     });
 
-    let input = module.func(Some("$input"), |_| {
+    let input = module.func("$input", |_| {
         vec![Instr::Call(read_byte), Instr::Call(set_cell)]
     });
 
-    let output = module.func(Some("$output"), |_| {
+    let output = module.func("$output", |_| {
         vec![
             Instr::GlobalGet(ptr),
             Instr::ILoad8(Nn::N32, Sx::U, MemArg::default()),
@@ -97,20 +97,20 @@ pub fn main() {
         ]
     });
 
-    let main = module.func(Some("$main"), |_| {
+    let main = module.func("$main", |_| {
         vec![
             Instr::I32Const(30004),
             Instr::I32Const(30012),
-            Instr::IStore(Nn::N32, MemArg::default()),
+            Instr::I32Store(MemArg::default()),
             Instr::I32Const(30008),
             Instr::I32Const(1),
-            Instr::IStore(Nn::N32, MemArg::default()),
+            Instr::I32Store(MemArg::default()),
             Instr::I32Const(30016),
             Instr::I32Const(30024),
-            Instr::IStore(Nn::N32, MemArg::default()),
+            Instr::I32Store(MemArg::default()),
             Instr::I32Const(30020),
             Instr::I32Const(1),
-            Instr::IStore(Nn::N32, MemArg::default()),
+            Instr::I32Store(MemArg::default()),
             Instr::Call(input),
             Instr::I32Const(1),
             Instr::Call(mut_pointer),
@@ -119,6 +119,17 @@ pub fn main() {
             Instr::I32Const(-1i32 as u32),
             Instr::Call(mut_pointer),
             Instr::Call(output),
+            Instr::Loop(
+                BlockType::default(),
+                vec![
+                    Instr::I32Const(-1i32 as u32),
+                    Instr::Call(mut_cell),
+                    Instr::GlobalGet(ptr),
+                    Instr::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+                    Instr::BrIf(0.into()),
+                ]
+                .into(),
+            ),
         ]
     });
 
