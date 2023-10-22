@@ -1,2 +1,2 @@
 [workspace]
-members = ["brainfuck/*"]
+members = ["brainfuck/bf", "brainfuck/brainlib", "common/wasmitter"]
