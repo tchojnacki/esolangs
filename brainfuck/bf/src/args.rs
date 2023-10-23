@@ -4,12 +4,12 @@ use clap::{value_parser, Parser, ValueEnum};
 use super::input::Input;
 
 #[derive(Parser)]
-pub struct Arguments {
+pub(crate) struct Arguments {
     #[arg(short, long, default_value = "run")]
-    pub target: Target,
+    pub(crate) target: Target,
 
     #[command(flatten)]
-    pub input: Input,
+    pub(crate) input: Input,
 
     #[command(flatten)]
     conventions: Conventions,
@@ -27,7 +27,7 @@ impl From<&Arguments> for Settings {
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Target {
+pub(crate) enum Target {
     /// Run the code directly from the command line
     Run,
 

@@ -1,4 +1,4 @@
-pub fn highlight_source(header: &str, source: &str, pos: usize, message: &str) -> String {
+pub(crate) fn highlight_source(header: &str, source: &str, pos: usize, message: &str) -> String {
     let (line, col) = line_col(source, pos);
     format!(
         "{header}\n{}\n  |        at {line}:{col}",
@@ -6,7 +6,7 @@ pub fn highlight_source(header: &str, source: &str, pos: usize, message: &str) -
     )
 }
 
-pub fn highlight_code(source: &str, pos: usize, message: &str) -> String {
+pub(crate) fn highlight_code(source: &str, pos: usize, message: &str) -> String {
     let padded = &format!("     {source}      ")[pos..pos + 11].replace('\n', "␤");
     format!("  | {padded}\n  |      ^ {message}")
 }
