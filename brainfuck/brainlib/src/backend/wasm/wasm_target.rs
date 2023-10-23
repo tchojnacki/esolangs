@@ -87,7 +87,7 @@ impl WasmTarget {
         }
     }
 
-    pub(crate) fn main_prelude(&self, settings: &Settings) -> Vec<WI> {
+    pub(crate) fn main_header(&self, settings: &Settings) -> Vec<WI> {
         match self {
             WasmTarget::Normal => Vec::new(),
             WasmTarget::Wasi => vec![

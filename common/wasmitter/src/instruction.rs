@@ -269,9 +269,9 @@ pub enum Instr {
     /// `unreachable`
     Unreachable,
     /// `block blocktype instr* end`
-    Block(BlockType, Expr),
+    Block(BlockType, Vec<Instr>),
     /// `loop blocktype instr* end`
-    Loop(BlockType, Expr),
+    Loop(BlockType, Vec<Instr>),
     /// `br labelidx`
     Br(LabelIdx),
     /// `br_if labelidx`
@@ -383,15 +383,15 @@ impl Instr {
                 Instr::DataDrop(idx) => format!("data.drop {}", idx.id_or_index(())),
                 Instr::Nop => "nop".into(),
                 Instr::Unreachable => "unreachable".into(),
-                Instr::Block(block_type, expr) => format!(
+                Instr::Block(block_type, instrs) => format!(
                     "block {}\n{}{tab}",
                     block_type.emit_wat_inline(module),
-                    expr.emit_wat_block(module, req_func(), indent + 2)
+                    Expr(instrs.clone()).emit_wat_block(module, req_func(), indent + 2)
                 ),
-                Instr::Loop(block_type, expr) => format!(
+                Instr::Loop(block_type, instrs) => format!(
                     "loop {}\n{}{tab}",
                     block_type.emit_wat_inline(module),
-                    expr.emit_wat_block(module, req_func(), indent + 2)
+                    Expr(instrs.clone()).emit_wat_block(module, req_func(), indent + 2)
                 ),
                 Instr::Br(idx) => format!("br {}", idx.id_or_index(())),
                 Instr::BrIf(idx) => format!("br_if {}", idx.id_or_index(())),

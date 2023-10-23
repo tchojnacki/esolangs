@@ -1,6 +1,8 @@
 use std::io::{self, Write};
 
-use wasmitter::{BlockType, Id, Instr as WI, MemArg, Module, Mutability, Nn, Sx, I32};
+use wasmitter::{
+    BlockType, FuncIdx, GlobalIdx, Id, Instr as WI, MemArg, Module, Mutability, Nn, Sx, I32,
+};
 
 use crate::backend::{
     common::{Instruction as CI, Program, Settings},
@@ -19,72 +21,15 @@ impl WasmModule {
         let ptr = module.global("$ptr", Mutability::Mut, I32, WI::I32Const(0));
         let memory = module.memory(Id::none(), pages, pages);
 
-        let mut_pointer = module.func("$mut_pointer", |scope| {
-            let offset = scope.add_param(I32);
-            vec![
-                WI::GlobalGet(ptr),
-                WI::LocalGet(offset),
-                WI::IAdd(Nn::N32),
-                WI::I32Const(settings.tape_length()),
-                WI::IRem(Nn::N32, Sx::U),
-                WI::GlobalSet(ptr),
-            ]
-        });
-
-        let mut_cell = module.func("$mut_cell", |scope| {
-            let change = scope.add_param(I32);
-            vec![
-                WI::GlobalGet(ptr),
-                WI::GlobalGet(ptr),
-                WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
-                WI::LocalGet(change),
-                WI::IAdd(Nn::N32),
-                WI::I32Const(0xFF),
-                WI::IAnd(Nn::N32),
-                WI::IStore8(Nn::N32, MemArg::default()),
-            ]
-        });
-
-        let set_cell = module.func("$set_cell", |scope| {
-            let value = scope.add_param(I32);
-            vec![
-                WI::GlobalGet(ptr),
-                WI::LocalGet(value),
-                WI::IStore8(Nn::N32, MemArg::default()),
-            ]
-        });
-
-        let input = module.func("$input", |_| {
-            vec![
-                WI::Call(read_byte),
-                WI::I32Const(0xFF),
-                WI::IAnd(Nn::N32),
-                WI::Call(set_cell),
-            ]
-        });
-
-        let output = module.func("$output", |_| {
-            vec![
-                WI::GlobalGet(ptr),
-                WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
-                WI::Call(write_byte),
-            ]
-        });
-
         let mut stack = vec![Vec::new()];
 
         for instr in program.0.iter() {
             let current = stack.last_mut().expect("unexpected stack underflow");
 
             match instr {
-                CI::MutPointer(change) => current.append(&mut vec![
-                    WI::I32Const(*change as u32),
-                    WI::Call(mut_pointer),
-                ]),
-                CI::MutCell(change) =>
-                    current.append(&mut vec![WI::I32Const(*change as u32), WI::Call(mut_cell)]),
-                CI::SetCell(value) =>
-                    current.append(&mut vec![WI::I32Const(*value as u32), WI::Call(set_cell)]),
+                CI::MutPointer(change) => current.append(&mut mut_pointer(settings, ptr, *change)),
+                CI::MutCell(change) => current.append(&mut mut_cell(ptr, *change)),
+                CI::SetCell(value) => current.append(&mut set_cell(ptr, *value)),
                 CI::JumpRightZ(_) => stack.push(Vec::new()),
                 CI::JumpLeftNz(_) => {
                     let body = stack.pop().expect("unexpected stack underflow");
@@ -93,42 +38,25 @@ impl WasmModule {
                     current.push(WI::Block(
                         BlockType::default(),
                         [
-                            vec![
-                                WI::GlobalGet(ptr),
-                                WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
-                                WI::IEqz(Nn::N32),
-                                WI::BrIf(0.into()),
-                            ],
+                            loop_header(ptr),
                             vec![WI::Loop(
                                 BlockType::default(),
-                                [
-                                    body,
-                                    vec![
-                                        WI::GlobalGet(ptr),
-                                        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
-                                        WI::I32Const(0),
-                                        WI::INe(Nn::N32),
-                                        WI::BrIf(0.into()),
-                                    ],
-                                ]
-                                .concat()
-                                .into(),
+                                [body, loop_trailer(ptr)].concat(),
                             )],
                         ]
-                        .concat()
-                        .into(),
+                        .concat(),
                     ))
                 },
-                CI::Input => current.push(WI::Call(input)),
-                CI::Output => current.push(WI::Call(output)),
-                CI::Breakpoint(_) => (),
+                CI::Input => current.append(&mut input(ptr, read_byte)),
+                CI::Output => current.append(&mut output(ptr, write_byte)),
+                CI::Breakpoint(_) => current.push(WI::Nop),
             }
         }
 
         let main = module.func("$main", |_| {
             let body = stack.pop().expect("unexpected stack underflow");
             assert!(stack.is_empty(), "unexpected stack overflow");
-            [target.main_prelude(settings), body].concat()
+            [target.main_header(settings), body].concat()
         });
 
         module.export("memory", memory);
@@ -140,4 +68,71 @@ impl WasmModule {
     pub fn emit_wat(&self, mut write: impl Write) -> io::Result<()> {
         write.write_all(self.0.to_wat().as_bytes())
     }
+}
+
+fn mut_pointer(settings: &Settings, ptr: GlobalIdx, change: i32) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::I32Const(change as u32),
+        WI::IAdd(Nn::N32),
+        WI::I32Const(settings.tape_length()),
+        WI::IRem(Nn::N32, Sx::U),
+        WI::GlobalSet(ptr),
+    ]
+}
+
+fn mut_cell(ptr: GlobalIdx, change: i8) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::GlobalGet(ptr),
+        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+        WI::I32Const(change as u32),
+        WI::IAdd(Nn::N32),
+        WI::I32Const(0xFF),
+        WI::IAnd(Nn::N32),
+        WI::IStore8(Nn::N32, MemArg::default()),
+    ]
+}
+
+fn set_cell(ptr: GlobalIdx, value: u8) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::I32Const(value as u32),
+        WI::IStore8(Nn::N32, MemArg::default()),
+    ]
+}
+
+fn input(ptr: GlobalIdx, read_byte: FuncIdx) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::Call(read_byte),
+        WI::I32Const(0xFF),
+        WI::IAnd(Nn::N32),
+        WI::IStore8(Nn::N32, MemArg::default()),
+    ]
+}
+
+fn output(ptr: GlobalIdx, write_byte: FuncIdx) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+        WI::Call(write_byte),
+    ]
+}
+
+fn loop_header(ptr: GlobalIdx) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+        WI::IEqz(Nn::N32),
+        WI::BrIf(0.into()),
+    ]
+}
+
+fn loop_trailer(ptr: GlobalIdx) -> Vec<WI> {
+    vec![
+        WI::GlobalGet(ptr),
+        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+        WI::BrIf(0.into()),
+    ]
 }
