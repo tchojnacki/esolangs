@@ -12,6 +12,7 @@ publish = false
 
 [dependencies]
 thiserror = "1.0.49"
+wasmitter = { path = "../../common/wasmitter" }
 
 [dev-dependencies]
 quickcheck = "1.0.3"

@@ -165,7 +165,7 @@ impl Mutability {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Expr(pub(crate) Vec<Instr>);
 
 impl From<Vec<Instr>> for Expr {
@@ -210,6 +210,10 @@ impl Func {
             self.func_idx.id_or_comment(module),
             func_type.emit_wat_inline()
         ));
+
+        for local in &self.locals {
+            result.push_str(&format!("{tab}  (local {})\n", local.emit_wat_inline()));
+        }
 
         result.push_str(&self.body.emit_wat_block(module, self, indent + 2));
 

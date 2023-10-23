@@ -16,17 +16,35 @@ $ bf --help
 Usage: bf [OPTIONS] <--file <FILE>|--code <CODE>|--stdin>
 
 Options:
-  -d, --debug  Run code in debug mode (use # to set a breakpoint)
-  -h, --help   Print help
+  -t, --target <TARGET>
+          [default: run]
+
+          Possible values:
+          - run:            Run the code directly from the command line
+          - debug:          Run the code in debug mode (use # to set a breakpoint)
+          - wasm-wasi-text: Compile the code to WASM text format, using the WASI standard
+
+  -h, --help
+          Print help (see a summary with '-h')
 
 Input:
-  -f, --file <FILE>  Path to the file containing the program code
-  -c, --code <CODE>  Program code passed as an inline argument
-  -s, --stdin        Pass the program code through stdin and (use ! to separate it from input)
+  -f, --file <FILE>
+          Path to the file containing the program code
+
+  -c, --code <CODE>
+          Program code passed as an inline argument
+
+  -s, --stdin
+          Pass the program code through stdin and (use ! to separate it from input)
 
 Conventions:
-      --length <TAPE_LENGTH>  Count of available memory cells [default: 30000]
-      --strict                If enabled, stop execution when overflowing a cell or tape index
+      --length <TAPE_LENGTH>
+          Count of available memory cells
+          
+          [default: 30000]
+
+      --strict
+          If enabled, stop execution when overflowing a cell or tape index
 
 
 $ bf -f specs/mandelbrot.code.bf
@@ -80,7 +98,7 @@ AAAAAAAAAAAAABBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDEEEEFFFI 
 AAAAAAAAAAAAAAABBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDEEEFGIIGFFEEEDDDDDDDDCCCCCCCCCBBBBBBBBBBBBBBBBBBBBBBBBBB
 
 
-$ bf -f specs/add.code.bf -d
+$ bf -f specs/add.code.bf -t debug
 Debugger: Entering debugger due to a breakpoint hit.
   | es ]␤#␤++␤>
   |      ^ breakpoint defined here

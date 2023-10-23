@@ -19,7 +19,7 @@ pub mod util;
 pub use crate::{
     backend::{
         common::{Instruction, Program, Settings},
-        interpreter,
+        interpreter, wasm,
     },
     frontend::ParseError,
 };

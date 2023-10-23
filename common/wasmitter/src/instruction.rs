@@ -7,7 +7,7 @@ use crate::{
     Expr, FuncType, ResultType, TypeIdx, ValType,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Nn {
     N32,
     N64,
@@ -26,7 +26,7 @@ impl Display for Nn {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Sx {
     U,
     S,
@@ -45,7 +45,7 @@ impl Display for Sx {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct MemArg<const N: usize> {
     offset: u32,
     align: u32,
@@ -63,15 +63,7 @@ impl<const N: usize> Display for MemArg<N> {
     }
 }
 
-#[derive(Debug)]
-pub enum Ww {
-    W8,
-    W16,
-    W32,
-    W64,
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum BlockType {
     Type(TypeIdx),
     Val(Option<ValType>),
@@ -100,7 +92,7 @@ impl BlockType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Instr {
     /// `i32.const u32`
     I32Const(u32),

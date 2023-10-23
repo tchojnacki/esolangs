@@ -114,6 +114,7 @@ dependencies = [
  "quickcheck_macros",
  "test-case",
  "thiserror",
+ "wasmitter",
 ]
 
 [[package]]

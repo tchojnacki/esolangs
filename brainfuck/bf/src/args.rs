@@ -1,13 +1,12 @@
 use brainlib::Settings;
-use clap::{value_parser, Parser};
+use clap::{value_parser, Parser, ValueEnum};
 
 use super::input::Input;
 
 #[derive(Parser)]
 pub struct Arguments {
-    /// Run code in debug mode (use # to set a breakpoint)
-    #[arg(short, long)]
-    debug: bool,
+    #[arg(short, long, default_value = "run")]
+    pub target: Target,
 
     #[command(flatten)]
     pub input: Input,
@@ -21,10 +20,22 @@ impl From<&Arguments> for Settings {
         Self::try_new(
             args.conventions.tape_length,
             args.conventions.strict,
-            args.debug,
+            args.target == Target::Debug,
         )
         .unwrap()
     }
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Target {
+    /// Run the code directly from the command line
+    Run,
+
+    /// Run the code in debug mode (use # to set a breakpoint)
+    Debug,
+
+    /// Compile the code to WASM text format, using the WASI standard
+    WasmWasiText,
 }
 
 #[derive(Parser)]
