@@ -51,6 +51,8 @@ impl FuncScope {
 }
 
 impl Module {
+    pub const PAGE_SIZE: u32 = 0x10000;
+
     pub fn new() -> Self {
         Self::default()
     }

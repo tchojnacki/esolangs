@@ -2,61 +2,22 @@ use std::io::{self, Write};
 
 use wasmitter::{BlockType, Id, Instr as WI, MemArg, Module, Mutability, Nn, Sx, I32};
 
-use crate::backend::common::{Instruction as CI, Program};
+use crate::backend::{
+    common::{Instruction as CI, Program, Settings},
+    wasm::WasmTarget,
+};
 
 pub struct WasmModule(Module);
 
 impl WasmModule {
-    pub fn compile_from(program: Program) -> Self {
+    pub fn compile_from(program: &Program, target: WasmTarget, settings: &Settings) -> Self {
         let mut module = Module::new();
 
-        let fd_read = module.import_func(
-            "wasi_unstable",
-            "fd_read",
-            "$fd_read",
-            vec![I32, I32, I32, I32],
-            I32,
-        );
-
-        let fd_write = module.import_func(
-            "wasi_unstable",
-            "fd_write",
-            "$fd_write",
-            vec![I32, I32, I32, I32],
-            I32,
-        );
-
-        let read_byte = module.func("$read_byte", |scope| {
-            scope.add_result(I32);
-            vec![
-                WI::I32Const(0),
-                WI::I32Const(30004),
-                WI::I32Const(1),
-                WI::I32Const(30000),
-                WI::Call(fd_read),
-                WI::Drop,
-                WI::I32Const(30012),
-                WI::I32Load(MemArg::default()),
-            ]
-        });
-
-        let write_byte = module.func("$write_byte", |scope| {
-            let value = scope.add_param(I32);
-            vec![
-                WI::I32Const(30024),
-                WI::LocalGet(value),
-                WI::I32Store(MemArg::default()),
-                WI::I32Const(1),
-                WI::I32Const(30016),
-                WI::I32Const(1),
-                WI::I32Const(30000),
-                WI::Call(fd_write),
-                WI::Drop,
-            ]
-        });
+        let pages = target.required_pages(settings);
+        let (read_byte, write_byte) = target.inject_io_funcs(&mut module, settings);
 
         let ptr = module.global("$ptr", Mutability::Mut, I32, WI::I32Const(0));
-        let memory = module.memory(Id::none(), 1, 1);
+        let memory = module.memory(Id::none(), pages, pages);
 
         let mut_pointer = module.func("$mut_pointer", |scope| {
             let offset = scope.add_param(I32);
@@ -64,7 +25,7 @@ impl WasmModule {
                 WI::GlobalGet(ptr),
                 WI::LocalGet(offset),
                 WI::IAdd(Nn::N32),
-                WI::I32Const(30000),
+                WI::I32Const(settings.tape_length()),
                 WI::IRem(Nn::N32, Sx::U),
                 WI::GlobalSet(ptr),
             ]
@@ -78,7 +39,7 @@ impl WasmModule {
                 WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
                 WI::LocalGet(change),
                 WI::IAdd(Nn::N32),
-                WI::I32Const(255),
+                WI::I32Const(0xFF),
                 WI::IAnd(Nn::N32),
                 WI::IStore8(Nn::N32, MemArg::default()),
             ]
@@ -93,7 +54,14 @@ impl WasmModule {
             ]
         });
 
-        let input = module.func("$input", |_| vec![WI::Call(read_byte), WI::Call(set_cell)]);
+        let input = module.func("$input", |_| {
+            vec![
+                WI::Call(read_byte),
+                WI::I32Const(0xFF),
+                WI::IAnd(Nn::N32),
+                WI::Call(set_cell),
+            ]
+        });
 
         let output = module.func("$output", |_| {
             vec![
@@ -105,18 +73,18 @@ impl WasmModule {
 
         let mut stack = vec![Vec::new()];
 
-        for instr in program.0.into_iter() {
+        for instr in program.0.iter() {
             let current = stack.last_mut().expect("unexpected stack underflow");
 
             match instr {
                 CI::MutPointer(change) => current.append(&mut vec![
-                    WI::I32Const(change as u32),
+                    WI::I32Const(*change as u32),
                     WI::Call(mut_pointer),
                 ]),
                 CI::MutCell(change) =>
-                    current.append(&mut vec![WI::I32Const(change as u32), WI::Call(mut_cell)]),
+                    current.append(&mut vec![WI::I32Const(*change as u32), WI::Call(mut_cell)]),
                 CI::SetCell(value) =>
-                    current.append(&mut vec![WI::I32Const(value as u32), WI::Call(set_cell)]),
+                    current.append(&mut vec![WI::I32Const(*value as u32), WI::Call(set_cell)]),
                 CI::JumpRightZ(_) => stack.push(Vec::new()),
                 CI::JumpLeftNz(_) => {
                     let body = stack.pop().expect("unexpected stack underflow");
@@ -160,24 +128,7 @@ impl WasmModule {
         let main = module.func("$main", |_| {
             let body = stack.pop().expect("unexpected stack underflow");
             assert!(stack.is_empty(), "unexpected stack overflow");
-            [
-                vec![
-                    WI::I32Const(30004),
-                    WI::I32Const(30012),
-                    WI::I32Store(MemArg::default()),
-                    WI::I32Const(30008),
-                    WI::I32Const(1),
-                    WI::I32Store(MemArg::default()),
-                    WI::I32Const(30016),
-                    WI::I32Const(30024),
-                    WI::I32Store(MemArg::default()),
-                    WI::I32Const(30020),
-                    WI::I32Const(1),
-                    WI::I32Store(MemArg::default()),
-                ],
-                body,
-            ]
-            .concat()
+            [target.main_prelude(settings), body].concat()
         });
 
         module.export("memory", memory);

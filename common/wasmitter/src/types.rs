@@ -83,6 +83,12 @@ impl From<Vec<ValType>> for ResultType {
     }
 }
 
+impl From<()> for ResultType {
+    fn from(_: ()) -> Self {
+        Self(Vec::new())
+    }
+}
+
 impl ResultType {
     pub(crate) fn emit_wat_inline(&self) -> String {
         self.0

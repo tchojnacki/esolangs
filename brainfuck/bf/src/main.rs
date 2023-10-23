@@ -1,7 +1,11 @@
 use std::{io::stdout, process::ExitCode};
 
 use args::{Arguments, Target};
-use brainlib::{interpreter::Engine, wasm::WasmModule, Program, Settings};
+use brainlib::{
+    interpreter::Engine,
+    wasm::{WasmModule, WasmTarget},
+    Program, Settings,
+};
 use clap::Parser;
 use debugger::run_debugger;
 use errors::{show_error, CliError};
@@ -33,7 +37,10 @@ fn run() -> Result<(), String> {
         Target::Run => Engine::new_std(program, settings)
             .run()
             .map_err(|e| e.message(&source)),
-        Target::WasmWasiText => WasmModule::compile_from(program)
+        Target::WasmText => WasmModule::compile_from(&program, WasmTarget::Normal, &settings)
+            .emit_wat(stdout())
+            .map_err(|_| "Error: Could not write to stdout.".into()),
+        Target::WasmWasiText => WasmModule::compile_from(&program, WasmTarget::Wasi, &settings)
             .emit_wat(stdout())
             .map_err(|_| "Error: Could not write to stdout.".into()),
     }

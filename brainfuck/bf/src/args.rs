@@ -34,7 +34,10 @@ pub(crate) enum Target {
     /// Run the code in debug mode (use # to set a breakpoint)
     Debug,
 
-    /// Compile the code to WASM text format, using the WASI standard
+    /// Compile the code to plain WASM text format
+    WasmText,
+
+    /// Compile the code to WASM text format, using WASI
     WasmWasiText,
 }
 
