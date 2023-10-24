@@ -1,5 +1,7 @@
 # `brainlib` 🧠
 
+[![docs](https://img.shields.io/badge/docs-passing-success)](https://tchojnacki.github.io/esolangs/brainlib)
+
 > [!NOTE]  
 > Visit the [brainfuck](../#readme) directory to learn more about the language.
 
@@ -16,7 +18,3 @@ Engine::new_std_default(program).run().expect("Runtime error!");
 - Fully implemented: lexer, parser, bytecode generator, optimizer, interpreter.
 - Covered by unit and property tests.
 - No unsafe code.
-
-## TODO
-
-- Other targets (WASM, JIT).
