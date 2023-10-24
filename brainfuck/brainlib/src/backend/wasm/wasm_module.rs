@@ -28,7 +28,7 @@ impl WasmModule {
 
             match instr {
                 CI::MutPointer(change) => current.append(&mut mut_pointer(settings, ptr, *change)),
-                CI::MutCell(change) => current.append(&mut mut_cell(ptr, *change)),
+                CI::MutCell(change) => current.append(&mut mut_cell(settings, ptr, *change)),
                 CI::SetCell(value) => current.append(&mut set_cell(ptr, *value)),
                 CI::JumpRightZ(_) => stack.push(Vec::new()),
                 CI::JumpLeftNz(_) => {
@@ -71,27 +71,83 @@ impl WasmModule {
 }
 
 fn mut_pointer(settings: &Settings, ptr: GlobalIdx, change: i32) -> Vec<WI> {
-    vec![
-        WI::GlobalGet(ptr),
-        WI::I32Const(change as u32),
-        WI::IAdd(Nn::N32),
-        WI::I32Const(settings.tape_length()),
-        WI::IRem(Nn::N32, Sx::U),
-        WI::GlobalSet(ptr),
+    [
+        vec![
+            WI::GlobalGet(ptr),
+            WI::I32Const(change as u32),
+            WI::IAdd(Nn::N32),
+            WI::GlobalSet(ptr),
+        ],
+        if settings.strict() {
+            vec![
+                WI::Block(
+                    BlockType::default(),
+                    vec![
+                        WI::GlobalGet(ptr),
+                        WI::I32Const(0),
+                        WI::IGe(Nn::N32, Sx::S),
+                        WI::BrIf(0.into()),
+                        WI::Unreachable,
+                    ],
+                ),
+                WI::Block(
+                    BlockType::default(),
+                    vec![
+                        WI::GlobalGet(ptr),
+                        WI::I32Const(settings.tape_length()),
+                        WI::ILt(Nn::N32, Sx::S),
+                        WI::BrIf(0.into()),
+                        WI::Unreachable,
+                    ],
+                ),
+            ]
+        } else {
+            vec![
+                WI::GlobalGet(ptr),
+                WI::I32Const(settings.tape_length()),
+                WI::IRem(Nn::N32, Sx::U),
+                WI::GlobalSet(ptr),
+            ]
+        },
     ]
+    .concat()
 }
 
-fn mut_cell(ptr: GlobalIdx, change: i8) -> Vec<WI> {
-    vec![
-        WI::GlobalGet(ptr),
-        WI::GlobalGet(ptr),
-        WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
-        WI::I32Const(change as u32),
-        WI::IAdd(Nn::N32),
-        WI::I32Const(0xFF),
-        WI::IAnd(Nn::N32),
-        WI::IStore8(Nn::N32, MemArg::default()),
+fn mut_cell(settings: &Settings, ptr: GlobalIdx, change: i8) -> Vec<WI> {
+    [
+        vec![
+            WI::GlobalGet(ptr),
+            WI::GlobalGet(ptr),
+            WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+            WI::I32Const(change as u32),
+            WI::IAdd(Nn::N32),
+            WI::IStore8(Nn::N32, MemArg::default()),
+        ],
+        if settings.strict() {
+            vec![WI::Block(
+                BlockType::default(),
+                vec![
+                    WI::GlobalGet(ptr),
+                    WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+                    WI::I32Const(!0xFF),
+                    WI::IAnd(Nn::N32),
+                    WI::IEqz(Nn::N32),
+                    WI::BrIf(0.into()),
+                    WI::Unreachable,
+                ],
+            )]
+        } else {
+            vec![
+                WI::GlobalGet(ptr),
+                WI::GlobalGet(ptr),
+                WI::ILoad8(Nn::N32, Sx::U, MemArg::default()),
+                WI::I32Const(0xFF),
+                WI::IAnd(Nn::N32),
+                WI::IStore8(Nn::N32, MemArg::default()),
+            ]
+        },
     ]
+    .concat()
 }
 
 fn set_cell(ptr: GlobalIdx, value: u8) -> Vec<WI> {
