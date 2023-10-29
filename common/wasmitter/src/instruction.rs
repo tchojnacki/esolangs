@@ -95,6 +95,30 @@ impl BlockType {
 
 #[non_exhaustive]
 #[derive(Clone, Debug)]
+pub(crate) enum ConstInstr {
+    I32(u32),
+    I64(u64),
+    F32(f32),
+    F64(f64),
+}
+
+impl ConstInstr {
+    pub(crate) fn emit_wat_block(&self, indent: usize) -> String {
+        format!(
+            "{}({})\n",
+            " ".repeat(indent),
+            match self {
+                Self::I32(val) => format!("i32.const {}", *val as i32),
+                Self::I64(val) => format!("i64.const {}", *val as i64),
+                Self::F32(val) => format!("f32.const {val}"),
+                Self::F64(val) => format!("f64.const {val}"),
+            }
+        )
+    }
+}
+
+#[non_exhaustive]
+#[derive(Clone, Debug)]
 pub enum Instr {
     /// `i32.const u32`
     I32Const(u32),
@@ -309,16 +333,8 @@ impl Instr {
         }
     }
 
-    pub(crate) fn emit_wat_block(
-        &self,
-        module: &Module,
-        func: Option<&Func>,
-        indent: usize,
-    ) -> String {
+    pub(crate) fn emit_wat_block(&self, module: &Module, func: &Func, indent: usize) -> String {
         let tab = " ".repeat(indent);
-        let req_func = || func.expect("local instruction used outside of a function");
-        let ctx = || (module, req_func());
-
         format!(
             "{tab}({})\n",
             match self {
@@ -382,9 +398,9 @@ impl Instr {
                 Instr::FReinterpretI(nn) => format!("f{nn}.reinterpret_i{nn}"),
                 Instr::Drop => "drop".into(),
                 Instr::Select => "select".into(),
-                Instr::LocalGet(idx) => format!("local.get {}", idx.id_or_index(ctx())),
-                Instr::LocalSet(idx) => format!("local.set {}", idx.id_or_index(ctx())),
-                Instr::LocalTee(idx) => format!("local.tee {}", idx.id_or_index(ctx())),
+                Instr::LocalGet(idx) => format!("local.get {}", idx.id_or_index((module, func))),
+                Instr::LocalSet(idx) => format!("local.set {}", idx.id_or_index((module, func))),
+                Instr::LocalTee(idx) => format!("local.tee {}", idx.id_or_index((module, func))),
                 Instr::GlobalGet(idx) => format!("global.get {}", idx.id_or_index(module)),
                 Instr::GlobalSet(idx) => format!("global.set {}", idx.id_or_index(module)),
                 Instr::I32Load(memarg) => format!("i32.load{memarg}"),
@@ -410,12 +426,12 @@ impl Instr {
                 Instr::Block(block_type, instrs) => format!(
                     "block {}\n{}{tab}",
                     block_type.emit_wat_inline(module),
-                    Expr(instrs.clone()).emit_wat_block(module, req_func(), indent + 2)
+                    Expr(instrs.clone()).emit_wat_block(module, func, indent + 2)
                 ),
                 Instr::Loop(block_type, instrs) => format!(
                     "loop {}\n{}{tab}",
                     block_type.emit_wat_inline(module),
-                    Expr(instrs.clone()).emit_wat_block(module, req_func(), indent + 2)
+                    Expr(instrs.clone()).emit_wat_block(module, func, indent + 2)
                 ),
                 Instr::Br(idx) => format!("br {}", idx.id_or_index(())),
                 Instr::BrIf(idx) => format!("br_if {}", idx.id_or_index(())),

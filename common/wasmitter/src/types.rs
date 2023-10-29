@@ -4,6 +4,7 @@ use crate::{
     indices::{FuncIdx, GlobalIdx, MemIdx, TypeIdx, WasmIndex},
     instruction::Instr,
     module::Module,
+    ConstInstr,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -179,12 +180,10 @@ impl From<Instr> for Expr {
 
 impl Expr {
     pub(crate) fn emit_wat_block(&self, module: &Module, func: &Func, indent: usize) -> String {
-        let mut result = String::new();
-        let func = Some(func);
-        for instr in &self.0 {
-            result.push_str(&instr.emit_wat_block(module, func, indent));
-        }
-        result
+        self.0
+            .iter()
+            .map(|instr| instr.emit_wat_block(module, func, indent))
+            .collect()
     }
 }
 
@@ -251,7 +250,7 @@ impl Mem {
 #[derive(Debug)]
 pub struct Global {
     pub(crate) global_type: GlobalType,
-    pub(crate) init: Instr,
+    pub(crate) init: ConstInstr,
     pub(crate) global_idx: GlobalIdx,
 }
 
@@ -262,7 +261,7 @@ impl Global {
             "{tab}(global {} {}\n{}{tab})\n",
             self.global_idx.id_or_comment(module),
             self.global_type.emit_wat_inline(),
-            self.init.emit_wat_block(module, None, indent + 2),
+            self.init.emit_wat_block(indent + 2),
         )
     }
 }

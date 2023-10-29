@@ -3,12 +3,11 @@ use uuid::Uuid;
 use crate::{
     error::WasmError,
     indices::{FuncIdx, GlobalIdx, LocalIdx, MemIdx, TypeIdx, WasmIndex},
-    instruction::Instr,
     types::{
         Export, ExportDesc, Expr, Func, FuncType, Global, GlobalType, Import, ImportDesc, Limits,
         Mem, MemType, Mutability, ResultType, ValType,
     },
-    FuncId, Id,
+    ConstInstr, FuncId, Id, F32, F64, I32, I64,
 };
 
 #[derive(Default)]
@@ -153,12 +152,12 @@ impl Module {
         mem_idx
     }
 
-    pub fn global(
+    fn global(
         &mut self,
         id: impl Into<Id>,
         mutability: Mutability,
         val_type: ValType,
-        init: Instr,
+        init: ConstInstr,
     ) -> GlobalIdx {
         let global_idx = GlobalIdx::new(self.id, self.globals.len() as u32, id.into());
         self.globals.push(Global {
@@ -170,6 +169,42 @@ impl Module {
             global_idx,
         });
         global_idx
+    }
+
+    pub fn global_i32(
+        &mut self,
+        id: impl Into<Id>,
+        mutability: Mutability,
+        init: u32,
+    ) -> GlobalIdx {
+        self.global(id, mutability, I32, ConstInstr::I32(init))
+    }
+
+    pub fn global_i64(
+        &mut self,
+        id: impl Into<Id>,
+        mutability: Mutability,
+        init: u64,
+    ) -> GlobalIdx {
+        self.global(id, mutability, I64, ConstInstr::I64(init))
+    }
+
+    pub fn global_f32(
+        &mut self,
+        id: impl Into<Id>,
+        mutability: Mutability,
+        init: f32,
+    ) -> GlobalIdx {
+        self.global(id, mutability, F32, ConstInstr::F32(init))
+    }
+
+    pub fn global_f64(
+        &mut self,
+        id: impl Into<Id>,
+        mutability: Mutability,
+        init: f64,
+    ) -> GlobalIdx {
+        self.global(id, mutability, F64, ConstInstr::F64(init))
     }
 
     pub fn export(&mut self, name: impl Into<String>, desc: impl Into<ExportDesc>) {
