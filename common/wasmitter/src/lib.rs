@@ -1,3 +1,4 @@
+mod error;
 mod indices;
 mod instruction;
 mod module;

@@ -53,34 +53,38 @@ impl WasmTarget {
                     I32,
                 );
 
-                let read_byte = module.func("$read_byte", |scope| {
-                    scope.add_result(I32);
-                    vec![
-                        WI::I32Const(0),
-                        WI::I32Const(settings.tape_length() + 4),
-                        WI::I32Const(1),
-                        WI::I32Const(settings.tape_length()),
-                        WI::Call(fd_read),
-                        WI::Drop,
-                        WI::I32Const(settings.tape_length() + 12),
-                        WI::I32Load(MemArg::default()),
-                    ]
-                });
+                let read_byte = module
+                    .func("$read_byte", |scope| {
+                        scope.add_result(I32);
+                        vec![
+                            WI::I32Const(0),
+                            WI::I32Const(settings.tape_length() + 4),
+                            WI::I32Const(1),
+                            WI::I32Const(settings.tape_length()),
+                            WI::Call(fd_read),
+                            WI::Drop,
+                            WI::I32Const(settings.tape_length() + 12),
+                            WI::I32Load(MemArg::default()),
+                        ]
+                    })
+                    .expect("failed to create $read_byte");
 
-                let write_byte = module.func("$write_byte", |scope| {
-                    let value = scope.add_param(I32);
-                    vec![
-                        WI::I32Const(settings.tape_length() + 24),
-                        WI::LocalGet(value),
-                        WI::I32Store(MemArg::default()),
-                        WI::I32Const(1),
-                        WI::I32Const(settings.tape_length() + 16),
-                        WI::I32Const(1),
-                        WI::I32Const(settings.tape_length()),
-                        WI::Call(fd_write),
-                        WI::Drop,
-                    ]
-                });
+                let write_byte = module
+                    .func("$write_byte", |scope| {
+                        let value = scope.add_param(I32);
+                        vec![
+                            WI::I32Const(settings.tape_length() + 24),
+                            WI::LocalGet(value),
+                            WI::I32Store(MemArg::default()),
+                            WI::I32Const(1),
+                            WI::I32Const(settings.tape_length() + 16),
+                            WI::I32Const(1),
+                            WI::I32Const(settings.tape_length()),
+                            WI::Call(fd_write),
+                            WI::Drop,
+                        ]
+                    })
+                    .expect("failed to create $write_byte");
 
                 (read_byte, write_byte)
             },

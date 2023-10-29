@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::{
     indices::{FuncIdx, GlobalIdx, MemIdx, TypeIdx, WasmIndex},
     instruction::Instr,
@@ -43,27 +45,16 @@ impl NumType {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct VecType;
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum RefType {
-    FuncRef,
-    ExternRef,
-}
-
+#[non_exhaustive]
 #[derive(PartialEq, Clone, Debug)]
 pub enum ValType {
     Num(NumType),
-    Vec(VecType),
-    Ref(RefType),
 }
 
 impl ValType {
     pub(crate) fn emit_wat_inline(&self) -> String {
         match self {
             ValType::Num(num) => num.emit_wat_inline(),
-            _ => unimplemented!(),
         }
     }
 }
@@ -197,12 +188,22 @@ impl Expr {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct FuncId(Uuid);
+
+impl Default for FuncId {
+    fn default() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Func {
     pub(crate) type_idx: TypeIdx,
     pub(crate) func_idx: FuncIdx,
     pub(crate) locals: Vec<ValType>,
     pub(crate) body: Expr,
+    pub(crate) id: FuncId,
 }
 
 impl Func {
@@ -236,11 +237,11 @@ pub struct Mem {
 }
 
 impl Mem {
-    pub(crate) fn emit_wat_block(&self, indent: usize) -> String {
+    pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(memory {} {} {})\n",
             " ".repeat(indent),
-            self.mem_idx.id_or_comment(()),
+            self.mem_idx.id_or_comment(module),
             self.mem_type.limits.min,
             self.mem_type.limits.max
         )
@@ -259,7 +260,7 @@ impl Global {
         let tab = " ".repeat(indent);
         format!(
             "{tab}(global {} {}\n{}{tab})\n",
-            self.global_idx.id_or_comment(()),
+            self.global_idx.id_or_comment(module),
             self.global_type.emit_wat_inline(),
             self.init.emit_wat_block(module, None, indent + 2),
         )
@@ -337,7 +338,7 @@ impl ExportDesc {
     pub(crate) fn emit_wat_inline(&self, module: &Module) -> String {
         match self {
             ExportDesc::Func(func_idx) => format!("(func {})", func_idx.id_or_index(module)),
-            ExportDesc::Mem(mem_idx) => format!("(memory {})", mem_idx.id_or_index(())),
+            ExportDesc::Mem(mem_idx) => format!("(memory {})", mem_idx.id_or_index(module)),
             _ => unimplemented!(),
         }
     }

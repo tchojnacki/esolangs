@@ -9,8 +9,8 @@
 
 ```Rust
 let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
-let program = Program::compile(source, &Settings::new()).expect("Parse error!");
-Engine::new_std_default(program).run().expect("Runtime error!");
+let program = Program::compile(source, &Settings::new()).expect("parse error");
+Engine::new_std_default(program).run().expect("runtime error");
 ```
 
 ## Features

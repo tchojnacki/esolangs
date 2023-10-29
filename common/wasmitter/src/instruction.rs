@@ -1,7 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::{
-    indices::{DataIdx, FuncIdx, GlobalIdx, LabelIdx, LocalIdx, WasmIndex},
+    error::WasmError,
+    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, WasmIndex},
     module::Module,
     types::Func,
     Expr, FuncType, ResultType, TypeIdx, ValType,
@@ -92,6 +93,7 @@ impl BlockType {
     }
 }
 
+#[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum Instr {
     /// `i32.const u32`
@@ -260,10 +262,6 @@ pub enum Instr {
     MemoryFill,
     /// `memory.copy`
     MemoryCopy,
-    /// `memory.init dataidx`
-    MemoryInit(DataIdx),
-    /// `data.drop dataidx`
-    DataDrop(DataIdx),
     /// `nop`
     Nop,
     /// `unreachable`
@@ -283,6 +281,34 @@ pub enum Instr {
 }
 
 impl Instr {
+    pub(crate) fn validate(&self, module: &Module, func: &Func) -> Option<WasmError> {
+        match self {
+            Instr::LocalGet(idx) | Instr::LocalSet(idx) | Instr::LocalTee(idx) =>
+                if idx.belongs_to((module, func)) {
+                    None
+                } else {
+                    Some(WasmError::FuncMismatch)
+                },
+            Instr::GlobalGet(idx) | Instr::GlobalSet(idx) =>
+                if idx.belongs_to(module) {
+                    None
+                } else {
+                    Some(WasmError::ModuleMismatch)
+                },
+            Instr::Block(_, instrs) | Instr::Loop(_, instrs) => instrs
+                .iter()
+                .flat_map(|instr| instr.validate(module, func))
+                .next(),
+            Instr::Call(idx) =>
+                if idx.belongs_to(module) {
+                    None
+                } else {
+                    Some(WasmError::ModuleMismatch)
+                },
+            _ => None,
+        }
+    }
+
     pub(crate) fn emit_wat_block(
         &self,
         module: &Module,
@@ -359,8 +385,8 @@ impl Instr {
                 Instr::LocalGet(idx) => format!("local.get {}", idx.id_or_index(ctx())),
                 Instr::LocalSet(idx) => format!("local.set {}", idx.id_or_index(ctx())),
                 Instr::LocalTee(idx) => format!("local.tee {}", idx.id_or_index(ctx())),
-                Instr::GlobalGet(idx) => format!("global.get {}", idx.id_or_index(())),
-                Instr::GlobalSet(idx) => format!("global.set {}", idx.id_or_index(())),
+                Instr::GlobalGet(idx) => format!("global.get {}", idx.id_or_index(module)),
+                Instr::GlobalSet(idx) => format!("global.set {}", idx.id_or_index(module)),
                 Instr::I32Load(memarg) => format!("i32.load{memarg}"),
                 Instr::I64Load(memarg) => format!("i64.load{memarg}"),
                 Instr::F32Load(memarg) => format!("f32.load{memarg}"),
@@ -379,8 +405,6 @@ impl Instr {
                 Instr::MemoryGrow => "memory.grow".into(),
                 Instr::MemoryFill => "memory.fill".into(),
                 Instr::MemoryCopy => "memory.copy".into(),
-                Instr::MemoryInit(idx) => format!("memory.init {}", idx.id_or_index(())),
-                Instr::DataDrop(idx) => format!("data.drop {}", idx.id_or_index(())),
                 Instr::Nop => "nop".into(),
                 Instr::Unreachable => "unreachable".into(),
                 Instr::Block(block_type, instrs) => format!(

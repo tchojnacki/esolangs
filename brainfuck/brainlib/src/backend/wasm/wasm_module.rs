@@ -53,11 +53,13 @@ impl WasmModule {
             }
         }
 
-        let main = module.func("$main", |_| {
-            let body = stack.pop().expect("unexpected stack underflow");
-            assert!(stack.is_empty(), "unexpected stack overflow");
-            [target.main_header(settings), body].concat()
-        });
+        let main = module
+            .func("$main", |_| {
+                let body = stack.pop().expect("unexpected stack underflow");
+                assert!(stack.is_empty(), "unexpected stack overflow");
+                [target.main_header(settings), body].concat()
+            })
+            .expect("failed to create the main WASM function");
 
         module.export("memory", memory);
         module.export("_start", main);
