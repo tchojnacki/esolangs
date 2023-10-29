@@ -1,4 +1,9 @@
-use wasmitter::{FuncIdx, Instr as WI, MemArg, Module, I32};
+use wasmitter::{
+    indices::FuncIdx,
+    instructions::{Instr as WI, MemArg},
+    module::Module,
+    types::I32,
+};
 
 use crate::Settings;
 

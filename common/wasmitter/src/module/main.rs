@@ -1,13 +1,15 @@
-use uuid::Uuid;
-
+use super::global;
 use crate::{
     error::WasmError,
+    func::Func,
     indices::{FuncIdx, GlobalIdx, LocalIdx, MemIdx, TypeIdx, WasmIndex},
-    types::{
-        Export, ExportDesc, Expr, Func, FuncType, Global, GlobalType, Import, ImportDesc, Limits,
-        Mem, MemType, Mutability, ResultType, ValType,
+    instructions::ConstInstr,
+    internal::{FuncUid, ModuleUid},
+    module::{
+        Export, ExportDesc, Global, GlobalType, Import, ImportDesc, Mem, MemType, Mutability,
     },
-    ConstInstr, FuncId, Id, F32, F64, I32, I64,
+    text::Id,
+    types::{Expr, FuncType, Limits, ResultType, ValType, F32, F64, I32, I64},
 };
 
 #[derive(Default)]
@@ -15,31 +17,22 @@ pub struct FuncScope {
     params: Vec<ValType>,
     results: Vec<ValType>,
     locals: Vec<ValType>,
-    func_id: FuncId,
+    func_uid: FuncUid,
 }
 
 impl FuncScope {
     pub fn add_param(&mut self, val_type: ValType) -> LocalIdx {
         self.params.push(val_type);
-        LocalIdx::param(self.func_id, (self.params.len() - 1) as u32)
+        LocalIdx::param(self.func_uid, (self.params.len() - 1) as u32)
     }
 
     pub fn add_local(&mut self, val_type: ValType) -> LocalIdx {
         self.locals.push(val_type);
-        LocalIdx::local(self.func_id, (self.locals.len() - 1) as u32)
+        LocalIdx::local(self.func_uid, (self.locals.len() - 1) as u32)
     }
 
     pub fn add_result(&mut self, val_type: ValType) {
         self.results.push(val_type);
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct ModuleId(Uuid);
-
-impl Default for ModuleId {
-    fn default() -> Self {
-        Self(Uuid::new_v4())
     }
 }
 
@@ -51,7 +44,7 @@ pub struct Module {
     globals: Vec<Global>,
     imports: Vec<Import>,
     exports: Vec<Export>,
-    pub(crate) id: ModuleId,
+    pub(crate) uid: ModuleUid,
 }
 
 impl Module {
@@ -75,11 +68,11 @@ impl Module {
         let func_type = FuncType { params, results };
         for (i, ft) in self.types.iter().enumerate() {
             if *ft == func_type {
-                return TypeIdx::new(self.id, i as u32);
+                return TypeIdx::new(self.uid, i as u32);
             }
         }
         self.types.push(func_type);
-        TypeIdx::new(self.id, (self.types.len() - 1) as u32)
+        TypeIdx::new(self.uid, (self.types.len() - 1) as u32)
     }
 
     pub(crate) fn get_signature(&self, type_idx: TypeIdx) -> &FuncType {
@@ -96,7 +89,7 @@ impl Module {
     ) -> FuncIdx {
         let module = module.into();
         let name = name.into();
-        let func_idx = FuncIdx::import(self.id, self.imports.len() as u32, id.into());
+        let func_idx = FuncIdx::import(self.uid, self.imports.len() as u32, id.into());
         let desc = ImportDesc::Func {
             type_idx: self.resolve_type(params, results),
             func_idx,
@@ -114,14 +107,14 @@ impl Module {
         let body = builder(&mut scope).into();
         let type_idx = self.resolve_type(scope.params, scope.results);
         let locals = scope.locals;
-        let func_idx = FuncIdx::define(self.id, self.funcs.len() as u32, id.into());
-        let id = scope.func_id;
+        let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id.into());
+        let uid = scope.func_uid;
         let func = Func {
             type_idx,
             func_idx,
             locals,
             body,
-            id,
+            uid,
         };
 
         if let Some(error) = func
@@ -139,7 +132,7 @@ impl Module {
     }
 
     pub fn memory(&mut self, id: impl Into<Id>, min_pages: u32, max_pages: u32) -> MemIdx {
-        let mem_idx = MemIdx::new(self.id, self.mems.len() as u32, id.into());
+        let mem_idx = MemIdx::new(self.uid, self.mems.len() as u32, id.into());
         self.mems.push(Mem {
             mem_type: MemType {
                 limits: Limits {
@@ -152,14 +145,14 @@ impl Module {
         mem_idx
     }
 
-    fn global(
+    pub fn global(
         &mut self,
         id: impl Into<Id>,
         mutability: Mutability,
-        val_type: ValType,
         init: ConstInstr,
     ) -> GlobalIdx {
-        let global_idx = GlobalIdx::new(self.id, self.globals.len() as u32, id.into());
+        let val_type = init.return_type();
+        let global_idx = GlobalIdx::new(self.uid, self.globals.len() as u32, id.into());
         self.globals.push(Global {
             global_type: GlobalType {
                 mutability,
@@ -169,42 +162,6 @@ impl Module {
             global_idx,
         });
         global_idx
-    }
-
-    pub fn global_i32(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mutability,
-        init: u32,
-    ) -> GlobalIdx {
-        self.global(id, mutability, I32, ConstInstr::I32(init))
-    }
-
-    pub fn global_i64(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mutability,
-        init: u64,
-    ) -> GlobalIdx {
-        self.global(id, mutability, I64, ConstInstr::I64(init))
-    }
-
-    pub fn global_f32(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mutability,
-        init: f32,
-    ) -> GlobalIdx {
-        self.global(id, mutability, F32, ConstInstr::F32(init))
-    }
-
-    pub fn global_f64(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mutability,
-        init: f64,
-    ) -> GlobalIdx {
-        self.global(id, mutability, F64, ConstInstr::F64(init))
     }
 
     pub fn export(&mut self, name: impl Into<String>, desc: impl Into<ExportDesc>) {

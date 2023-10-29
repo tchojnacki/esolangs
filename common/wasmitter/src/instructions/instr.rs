@@ -2,10 +2,10 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     error::WasmError,
-    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, WasmIndex},
+    func::Func,
+    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, TypeIdx, WasmIndex},
     module::Module,
-    types::Func,
-    Expr, FuncType, ResultType, TypeIdx, ValType,
+    types::{Expr, FuncType, ResultType, ValType},
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -90,30 +90,6 @@ impl BlockType {
         };
 
         func_type.emit_wat_inline()
-    }
-}
-
-#[non_exhaustive]
-#[derive(Clone, Debug)]
-pub(crate) enum ConstInstr {
-    I32(u32),
-    I64(u64),
-    F32(f32),
-    F64(f64),
-}
-
-impl ConstInstr {
-    pub(crate) fn emit_wat_block(&self, indent: usize) -> String {
-        format!(
-            "{}({})\n",
-            " ".repeat(indent),
-            match self {
-                Self::I32(val) => format!("i32.const {}", *val as i32),
-                Self::I64(val) => format!("i64.const {}", *val as i64),
-                Self::F32(val) => format!("f32.const {val}"),
-                Self::F64(val) => format!("f64.const {val}"),
-            }
-        )
     }
 }
 
