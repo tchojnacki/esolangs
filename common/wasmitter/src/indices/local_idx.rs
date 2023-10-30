@@ -37,10 +37,10 @@ impl<'a> WasmIndex<'a> for LocalIdx {
     type Ctx = (&'a Module, &'a Func);
 
     fn resolve(&self, (module, func): (&'a Module, &'a Func)) -> u32 {
-        let func_type = module.get_signature(func.type_idx);
+        let func_type = module.get_signature(func.type_idx());
         match self.kind {
             LocalIdxKind::Param(idx) => idx,
-            LocalIdxKind::Local(idx) => func_type.params.0.len() as u32 + idx,
+            LocalIdxKind::Local(idx) => func_type.params.len() as u32 + idx,
         }
     }
 
@@ -49,6 +49,6 @@ impl<'a> WasmIndex<'a> for LocalIdx {
     }
 
     fn belongs_to(&self, (_, func): (&'a Module, &'a Func)) -> bool {
-        self.func_uid == func.uid
+        self.func_uid == func.uid()
     }
 }

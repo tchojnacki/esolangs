@@ -6,7 +6,7 @@ use crate::{
     internal::{ModuleUid, WasmIndex},
     module::{Export, ExportDesc, Global, Import, Mem},
     text::Id,
-    types::{FuncType, GlobalType, Limits, Mut, ResultType, ValType},
+    types::{FuncType, Limits, Mut, ResultType, ValType},
 };
 
 #[derive(Debug, Default)]
@@ -17,7 +17,7 @@ pub struct Module {
     globals: Vec<Global>,
     imports: Vec<Import>,
     exports: Vec<Export>,
-    pub(crate) uid: ModuleUid,
+    uid: ModuleUid,
 }
 
 impl Module {
@@ -25,6 +25,10 @@ impl Module {
 
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub(crate) const fn uid(&self) -> ModuleUid {
+        self.uid
     }
 
     pub(crate) fn func_import_count(&self) -> u32 {
@@ -39,14 +43,7 @@ impl Module {
         self.imports.iter().filter(|i| Import::is_global(i)).count() as u32
     }
 
-    pub(crate) fn resolve_type(
-        &mut self,
-        params: impl Into<ResultType>,
-        results: impl Into<ResultType>,
-    ) -> TypeIdx {
-        let params = params.into();
-        let results = results.into();
-        let func_type = FuncType { params, results };
+    pub(crate) fn resolve_type(&mut self, func_type: FuncType) -> TypeIdx {
         for (i, ft) in self.types.iter().enumerate() {
             if *ft == func_type {
                 return TypeIdx::new(self.uid, i as u32);
@@ -96,8 +93,10 @@ impl Module {
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
     ) -> FuncIdx {
+        let params = params.into();
+        let results = results.into();
         let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id.into());
-        let type_idx = self.resolve_type(params, results);
+        let type_idx = self.resolve_type(FuncType { params, results });
         self.imports
             .push(Import::func(module.into(), name.into(), type_idx, func_idx));
         func_idx
@@ -132,10 +131,8 @@ impl Module {
         self.imports.push(Import::global(
             module.into(),
             name.into(),
-            GlobalType {
-                mutability,
-                val_type,
-            },
+            mutability,
+            val_type,
             global_idx,
         ));
         global_idx
@@ -146,7 +143,7 @@ impl Module {
         B: FnOnce(&mut FuncScope) -> E,
         E: Into<Expr>,
     {
-        let mut scope = FuncScope::create();
+        let mut scope = FuncScope::initialize();
         let body = builder(&mut scope).into();
         let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id.into());
         let func = scope.into_func(self, func_idx, body);
@@ -161,23 +158,13 @@ impl Module {
     }
 
     pub fn global(&mut self, id: impl Into<Id>, mutability: Mut, init: ConstInstr) -> GlobalIdx {
-        let val_type = init.return_type();
         let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id.into());
-        self.globals.push(Global {
-            global_type: GlobalType {
-                mutability,
-                val_type,
-            },
-            init,
-            global_idx,
-        });
+        self.globals.push(Global::new(mutability, init, global_idx));
         global_idx
     }
 
     pub fn export(&mut self, name: impl Into<String>, desc: impl Into<ExportDesc>) {
-        let name = name.into();
-        let desc = desc.into();
-        self.exports.push(Export { name, desc });
+        self.exports.push(desc.into().into_export(name.into()));
     }
 
     pub fn to_wat(&self) -> Result<String, WasmError> {

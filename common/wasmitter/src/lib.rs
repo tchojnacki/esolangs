@@ -7,4 +7,4 @@ pub mod module;
 pub mod text;
 pub mod types;
 
-pub use self::error::WasmError;
+pub use self::{error::WasmError, instruction::Instr, module::Module};

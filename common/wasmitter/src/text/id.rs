@@ -4,7 +4,7 @@ fn idchar_is_valid(idchar: char) -> bool {
     idchar.is_ascii_alphanumeric() || "!#$%'*+-./:<=>?@\\^_`|~".contains(idchar)
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Id(Option<&'static str>);
 
 impl Id {

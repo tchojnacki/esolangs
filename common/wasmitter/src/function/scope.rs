@@ -4,7 +4,7 @@ use crate::{
     instruction::Expr,
     internal::FuncUid,
     module::Module,
-    types::ValType,
+    types::{FuncType, ValType},
 };
 
 pub struct FuncScope {
@@ -15,7 +15,7 @@ pub struct FuncScope {
 }
 
 impl FuncScope {
-    pub(crate) fn create() -> Self {
+    pub(crate) fn initialize() -> Self {
         Self {
             params: Vec::new(),
             results: Vec::new(),
@@ -25,13 +25,12 @@ impl FuncScope {
     }
 
     pub(crate) fn into_func(self, module: &mut Module, func_idx: FuncIdx, body: Expr) -> Func {
-        Func {
-            type_idx: module.resolve_type(self.params, self.results),
-            func_idx,
-            locals: self.locals,
-            body,
-            uid: self.func_uid,
-        }
+        let type_idx = module.resolve_type(FuncType {
+            params: self.params.into(),
+            results: self.results.into(),
+        });
+
+        Func::new(type_idx, func_idx, self.locals, body, self.func_uid)
     }
 
     pub fn add_param(&mut self, val_type: ValType) -> LocalIdx {

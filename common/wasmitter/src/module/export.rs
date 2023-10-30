@@ -5,44 +5,51 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum ExportDesc {
+enum ExportDescKind {
     Func(FuncIdx),
     Mem(MemIdx),
     Global(GlobalIdx),
 }
 
+#[derive(Debug)]
+pub struct ExportDesc(ExportDescKind);
+
 impl From<FuncIdx> for ExportDesc {
     fn from(func_idx: FuncIdx) -> Self {
-        Self::Func(func_idx)
+        Self(ExportDescKind::Func(func_idx))
     }
 }
 
 impl From<MemIdx> for ExportDesc {
     fn from(mem_idx: MemIdx) -> Self {
-        Self::Mem(mem_idx)
+        Self(ExportDescKind::Mem(mem_idx))
     }
 }
 
 impl From<GlobalIdx> for ExportDesc {
     fn from(global_idx: GlobalIdx) -> Self {
-        Self::Global(global_idx)
+        Self(ExportDescKind::Global(global_idx))
     }
 }
 
 impl ExportDesc {
-    pub(crate) fn emit_wat_inline(&self, module: &Module) -> String {
-        match self {
-            ExportDesc::Func(func_idx) => format!("(func {})", func_idx.id_or_index(module)),
-            ExportDesc::Mem(mem_idx) => format!("(memory {})", mem_idx.id_or_index(module)),
-            _ => unimplemented!(),
+    pub(crate) fn into_export(self, name: String) -> Export {
+        Export { name, desc: self }
+    }
+
+    fn emit_wat_inline(&self, module: &Module) -> String {
+        match self.0 {
+            ExportDescKind::Func(idx) => format!("(func {})", idx.id_or_index(module)),
+            ExportDescKind::Mem(idx) => format!("(memory {})", idx.id_or_index(module)),
+            ExportDescKind::Global(idx) => format!("(global {})", idx.id_or_index(module)),
         }
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct Export {
-    pub(crate) name: String,
-    pub(crate) desc: ExportDesc,
+    name: String,
+    desc: ExportDesc,
 }
 
 impl Export {

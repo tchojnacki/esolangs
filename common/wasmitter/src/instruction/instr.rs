@@ -1,99 +1,11 @@
-use std::fmt::{self, Display, Formatter};
-
 use crate::{
     error::WasmError,
     function::Func,
-    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, TypeIdx},
-    instruction::Expr,
+    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx},
+    instruction::{BlockType, Expr, MemArg, Nn, Sx},
     internal::WasmIndex,
     module::Module,
-    types::{FuncType, ResultType, ValType},
 };
-
-#[derive(Clone, Copy, Debug)]
-pub enum Nn {
-    N32,
-    N64,
-}
-
-impl Display for Nn {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Nn::N32 => "32",
-                Nn::N64 => "64",
-            }
-        )
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Sx {
-    U,
-    S,
-}
-
-impl Display for Sx {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Sx::U => "u",
-                Sx::S => "s",
-            }
-        )
-    }
-}
-
-#[derive(Clone, Copy, Default, Debug)]
-pub struct MemArg<const N: usize> {
-    offset: u32,
-    align: u32,
-}
-
-impl<const N: usize> Display for MemArg<N> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.offset != 0 {
-            write!(f, " offset={}", self.offset)?;
-        }
-        if self.align != 0 {
-            write!(f, " align={}", self.align)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum BlockType {
-    Type(TypeIdx),
-    Val(Option<ValType>),
-}
-
-impl Default for BlockType {
-    fn default() -> Self {
-        Self::Val(None)
-    }
-}
-
-impl BlockType {
-    fn emit_wat_inline(&self, module: &Module) -> String {
-        let func_type = match self {
-            BlockType::Type(type_idx) => module.get_signature(*type_idx).clone(),
-            BlockType::Val(val_type) => FuncType {
-                params: ResultType(Vec::new()),
-                results: ResultType(match val_type {
-                    Some(val_type) => vec![val_type.clone()],
-                    None => Vec::new(),
-                }),
-            },
-        };
-
-        func_type.emit_wat_inline()
-    }
-}
 
 #[non_exhaustive]
 #[derive(Clone, Debug)]

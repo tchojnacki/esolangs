@@ -46,7 +46,7 @@ impl WasmTarget {
                     "wasi_unstable",
                     "fd_read",
                     "$fd_read",
-                    vec![I32, I32, I32, I32],
+                    (I32, I32, I32, I32),
                     I32,
                 );
 
@@ -54,7 +54,7 @@ impl WasmTarget {
                     "wasi_unstable",
                     "fd_write",
                     "$fd_write",
-                    vec![I32, I32, I32, I32],
+                    (I32, I32, I32, I32),
                     I32,
                 );
 

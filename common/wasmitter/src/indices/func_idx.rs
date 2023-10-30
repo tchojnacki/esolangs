@@ -46,6 +46,6 @@ impl<'a> WasmIndex<'a> for FuncIdx {
     }
 
     fn belongs_to(&self, module: &'a Module) -> bool {
-        self.module_uid == module.uid
+        self.module_uid == module.uid()
     }
 }

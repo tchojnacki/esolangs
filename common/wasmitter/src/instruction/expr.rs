@@ -1,5 +1,8 @@
-use crate::{function::Func, instruction::Instr, module::Module};
-
+use crate::{
+    function::Func,
+    instruction::{ConstInstr, Instr},
+    module::Module,
+};
 #[derive(Clone, Debug)]
 pub struct Expr(pub(crate) Vec<Instr>);
 
@@ -12,6 +15,12 @@ impl From<Vec<Instr>> for Expr {
 impl From<Instr> for Expr {
     fn from(instr: Instr) -> Self {
         Self(vec![instr])
+    }
+}
+
+impl From<ConstInstr> for Expr {
+    fn from(instr: ConstInstr) -> Self {
+        Self(vec![instr.into()])
     }
 }
 

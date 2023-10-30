@@ -9,14 +9,38 @@ use crate::{
 
 #[derive(Debug)]
 pub(crate) struct Func {
-    pub(crate) type_idx: TypeIdx,
-    pub(crate) func_idx: FuncIdx,
-    pub(crate) locals: Vec<ValType>,
-    pub(crate) body: Expr,
-    pub(crate) uid: FuncUid,
+    type_idx: TypeIdx,
+    func_idx: FuncIdx,
+    locals: Vec<ValType>,
+    body: Expr,
+    uid: FuncUid,
 }
 
 impl Func {
+    pub(crate) fn new(
+        type_idx: TypeIdx,
+        func_idx: FuncIdx,
+        locals: Vec<ValType>,
+        body: Expr,
+        uid: FuncUid,
+    ) -> Self {
+        Self {
+            type_idx,
+            func_idx,
+            locals,
+            body,
+            uid,
+        }
+    }
+
+    pub(crate) const fn type_idx(&self) -> TypeIdx {
+        self.type_idx
+    }
+
+    pub(crate) const fn uid(&self) -> FuncUid {
+        self.uid
+    }
+
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.func_idx.validate().or(self
             .body

@@ -1,16 +1,32 @@
 use crate::{
-    indices::GlobalIdx, instruction::ConstInstr, internal::WasmIndex, module::Module,
-    types::GlobalType, WasmError,
+    indices::GlobalIdx,
+    instruction::ConstInstr,
+    internal::WasmIndex,
+    module::Module,
+    types::{GlobalType, Mut},
+    WasmError,
 };
 
 #[derive(Debug)]
 pub(crate) struct Global {
-    pub(crate) global_type: GlobalType,
-    pub(crate) init: ConstInstr,
-    pub(crate) global_idx: GlobalIdx,
+    global_type: GlobalType,
+    init: ConstInstr,
+    global_idx: GlobalIdx,
 }
 
 impl Global {
+    pub(crate) fn new(mutability: Mut, init: ConstInstr, global_idx: GlobalIdx) -> Self {
+        let val_type = init.return_type();
+        Self {
+            global_type: GlobalType {
+                mutability,
+                val_type,
+            },
+            init,
+            global_idx,
+        }
+    }
+
     pub(crate) fn validate(&self) -> Option<WasmError> {
         self.global_idx.validate()
     }

@@ -2,7 +2,7 @@ use crate::{
     indices::{FuncIdx, GlobalIdx, MemIdx, TypeIdx},
     internal::WasmIndex,
     module::Module,
-    types::{GlobalType, MemType},
+    types::{GlobalType, MemType, Mut, ValType},
     WasmError,
 };
 
@@ -80,9 +80,14 @@ impl Import {
     pub(crate) fn global(
         module: String,
         name: String,
-        global_type: GlobalType,
+        mutability: Mut,
+        val_type: ValType,
         global_idx: GlobalIdx,
     ) -> Self {
+        let global_type = GlobalType {
+            mutability,
+            val_type,
+        };
         Self {
             module,
             name,

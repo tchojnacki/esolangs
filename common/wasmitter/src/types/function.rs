@@ -1,9 +1,9 @@
 use crate::types::ResultType;
 
 #[derive(PartialEq, Clone, Debug)]
-pub struct FuncType {
-    pub params: ResultType,
-    pub results: ResultType,
+pub(crate) struct FuncType {
+    pub(crate) params: ResultType,
+    pub(crate) results: ResultType,
 }
 
 impl FuncType {

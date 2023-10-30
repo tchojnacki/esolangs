@@ -5,7 +5,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug)]
-pub struct TypeIdx {
+pub(crate) struct TypeIdx {
     module_uid: ModuleUid,
     index: u32,
 }
@@ -28,6 +28,6 @@ impl<'a> WasmIndex<'a> for TypeIdx {
     }
 
     fn belongs_to(&self, module: &'a Module) -> bool {
-        self.module_uid == module.uid
+        self.module_uid == module.uid()
     }
 }
