@@ -6,16 +6,16 @@ pub(crate) struct MemType {
 }
 
 impl MemType {
-    pub(crate) fn new(min_pages: u32, max_pages: u32) -> Self {
-        Self {
-            limits: Limits {
-                min: min_pages,
-                max: max_pages,
-            },
+    pub(crate) fn emit_wat_inline(&self) -> String {
+        match self.limits.max {
+            Some(max) => format!("{} {}", self.limits.min, max),
+            None => self.limits.min.to_string(),
         }
     }
+}
 
-    pub(crate) fn emit_wat_inline(&self) -> String {
-        format!("{} {}", self.limits.min, self.limits.max)
+impl From<Limits> for MemType {
+    fn from(limits: Limits) -> Self {
+        Self { limits }
     }
 }

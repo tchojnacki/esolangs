@@ -6,7 +6,7 @@ use crate::{
     internal::{ModuleUid, WasmIndex},
     module::{Export, ExportDesc, Global, Import, Mem},
     text::Id,
-    types::{FuncType, GlobalType, MemType, Mut, ResultType, ValType},
+    types::{FuncType, GlobalType, Limits, Mut, ResultType, ValType},
 };
 
 #[derive(Debug, Default)]
@@ -80,17 +80,20 @@ impl Module {
         module: impl Into<String>,
         name: impl Into<String>,
         id: impl Into<Id>,
-        min_pages: u32,
-        max_pages: u32,
-    ) -> MemIdx {
+        pages: impl Into<Limits>,
+    ) -> Result<MemIdx, WasmError> {
+        let pages = pages.into();
+        if let Some(error) = pages.validate() {
+            return Err(error);
+        }
         let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id.into());
         self.imports.push(Import::mem(
             module.into(),
             name.into(),
-            MemType::new(min_pages, max_pages),
+            pages.into(),
             mem_idx,
         ));
-        mem_idx
+        Ok(mem_idx)
     }
 
     pub fn import_global(
@@ -132,11 +135,18 @@ impl Module {
         Ok(func_idx)
     }
 
-    pub fn memory(&mut self, id: impl Into<Id>, min_pages: u32, max_pages: u32) -> MemIdx {
+    pub fn memory(
+        &mut self,
+        id: impl Into<Id>,
+        pages: impl Into<Limits>,
+    ) -> Result<MemIdx, WasmError> {
+        let pages = pages.into();
+        if let Some(error) = pages.validate() {
+            return Err(error);
+        }
         let mem_idx = MemIdx::define(self.uid, self.mems.len() as u32, id.into());
-        self.mems
-            .push(Mem::new(MemType::new(min_pages, max_pages), mem_idx));
-        mem_idx
+        self.mems.push(Mem::new(pages.into(), mem_idx));
+        Ok(mem_idx)
     }
 
     pub fn global(&mut self, id: impl Into<Id>, mutability: Mut, init: ConstInstr) -> GlobalIdx {

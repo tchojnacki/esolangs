@@ -2,4 +2,5 @@
 pub enum WasmError {
     ModuleMismatch,
     FuncMismatch,
+    InvalidLimits,
 }

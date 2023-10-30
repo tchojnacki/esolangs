@@ -23,7 +23,9 @@ impl WasmModule {
         let (read_byte, write_byte) = target.inject_io_funcs(&mut module, settings);
 
         let ptr = module.global("$ptr", Mut::Var, CWI::I32Const(0));
-        let memory = module.memory(Id::none(), pages, pages);
+        let memory = module
+            .memory(Id::none(), (pages, pages))
+            .expect("invalid memory limits");
 
         let mut stack = vec![Vec::new()];
 
