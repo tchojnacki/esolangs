@@ -1,5 +1,5 @@
 use crate::{
-    instructions::Instr,
+    instruction::Instr,
     types::{ValType, F32, F64, I32, I64},
 };
 
@@ -26,17 +26,13 @@ impl ConstInstr {
         }
     }
 
-    pub(crate) fn emit_wat_block(&self, indent: usize) -> String {
-        format!(
-            "{}({})\n",
-            " ".repeat(indent),
-            match self {
-                Self::I32Const(val) => format!("i32.const {}", *val as i32),
-                Self::I64Const(val) => format!("i64.const {}", *val as i64),
-                Self::F32Const(val) => format!("f32.const {val}"),
-                Self::F64Const(val) => format!("f64.const {val}"),
-            }
-        )
+    pub(crate) fn emit_wat_inline(&self) -> String {
+        match self {
+            Self::I32Const(val) => format!("(i32.const {})", *val as i32),
+            Self::I64Const(val) => format!("(i64.const {})", *val as i64),
+            Self::F32Const(val) => format!("(f32.const {val})"),
+            Self::F64Const(val) => format!("(f64.const {val})"),
+        }
     }
 }
 

@@ -1,18 +1,36 @@
-use crate::{indices::WasmIndex, internal::ModuleUid, module::Module, text::Id};
+use crate::{
+    internal::{ModuleUid, WasmIndex},
+    module::Module,
+    text::Id,
+};
+
+#[derive(Clone, Copy, Debug)]
+enum MemIdxKind {
+    Imported(u32),
+    Defined(u32),
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct MemIdx {
     module_uid: ModuleUid,
-    index: u32,
+    kind: MemIdxKind,
     id: Id,
 }
 
 impl MemIdx {
-    pub(crate) fn new(module_uid: ModuleUid, index: u32, id: Id) -> Self {
+    pub(crate) fn import(module_uid: ModuleUid, index: u32, id: Id) -> Self {
         Self {
-            index,
-            id,
             module_uid,
+            kind: MemIdxKind::Imported(index),
+            id,
+        }
+    }
+
+    pub(crate) fn define(module_uid: ModuleUid, index: u32, id: Id) -> Self {
+        Self {
+            module_uid,
+            kind: MemIdxKind::Defined(index),
+            id,
         }
     }
 }
@@ -20,8 +38,11 @@ impl MemIdx {
 impl<'a> WasmIndex<'a> for MemIdx {
     type Ctx = &'a Module;
 
-    fn resolve(&self, _: &'a Module) -> u32 {
-        self.index
+    fn resolve(&self, module: &'a Module) -> u32 {
+        match self.kind {
+            MemIdxKind::Imported(idx) => idx,
+            MemIdxKind::Defined(idx) => module.mem_import_count() + idx,
+        }
     }
 
     fn id(&self) -> Id {

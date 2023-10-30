@@ -4,10 +4,5 @@ mod import;
 mod main;
 mod mem;
 
-pub(crate) use self::{
-    export::Export,
-    global::{Global, GlobalType},
-    import::{Import, ImportDesc},
-    mem::{Mem, MemType},
-};
-pub use self::{export::ExportDesc, global::Mutability, main::Module};
+pub(crate) use self::{export::Export, global::Global, import::Import, mem::Mem};
+pub use self::{export::ExportDesc, main::Module};

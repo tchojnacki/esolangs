@@ -1,5 +1,8 @@
-use super::Module;
-use crate::indices::{FuncIdx, GlobalIdx, MemIdx, WasmIndex};
+use crate::{
+    indices::{FuncIdx, GlobalIdx, MemIdx},
+    internal::WasmIndex,
+    module::Module,
+};
 
 #[derive(Debug)]
 pub enum ExportDesc {

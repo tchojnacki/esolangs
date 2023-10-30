@@ -1,7 +1,7 @@
 mod error;
-mod func;
+pub mod function;
 pub mod indices;
-pub mod instructions;
+pub mod instruction;
 mod internal;
 pub mod module;
 pub mod text;

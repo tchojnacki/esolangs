@@ -1,4 +1,4 @@
-use crate::{indices::WasmIndex, text::Id};
+use crate::{internal::WasmIndex, text::Id};
 
 #[derive(Clone, Copy, Debug)]
 pub struct LabelIdx(pub(crate) u32);

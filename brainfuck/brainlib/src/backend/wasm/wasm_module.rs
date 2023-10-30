@@ -2,9 +2,10 @@ use std::io::{self, Write};
 
 use wasmitter::{
     indices::{FuncIdx, GlobalIdx},
-    instructions::{BlockType, ConstInstr as CWI, Instr as WI, MemArg, Nn, Sx},
-    module::{Module, Mutability},
+    instruction::{BlockType, ConstInstr as CWI, Instr as WI, MemArg, Nn, Sx},
+    module::Module,
     text::Id,
+    types::Mut,
 };
 
 use crate::backend::{
@@ -21,7 +22,7 @@ impl WasmModule {
         let pages = target.required_pages(settings);
         let (read_byte, write_byte) = target.inject_io_funcs(&mut module, settings);
 
-        let ptr = module.global("$ptr", Mutability::Mut, CWI::I32Const(0));
+        let ptr = module.global("$ptr", Mut::Var, CWI::I32Const(0));
         let memory = module.memory(Id::none(), pages, pages);
 
         let mut stack = vec![Vec::new()];

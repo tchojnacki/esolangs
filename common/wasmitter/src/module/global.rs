@@ -1,41 +1,7 @@
 use crate::{
-    indices::{GlobalIdx, WasmIndex},
-    instructions::ConstInstr,
-    module::Module,
-    types::ValType,
+    indices::GlobalIdx, instruction::ConstInstr, internal::WasmIndex, module::Module,
+    types::GlobalType,
 };
-
-#[derive(Debug)]
-pub(crate) struct GlobalType {
-    pub(crate) mutability: Mutability,
-    pub(crate) val_type: ValType,
-}
-
-impl GlobalType {
-    pub(crate) fn emit_wat_inline(&self) -> String {
-        format!(
-            "({} {})",
-            self.mutability.emit_wat_inline(),
-            self.val_type.emit_wat_inline()
-        )
-    }
-}
-
-#[derive(Debug)]
-pub enum Mutability {
-    Mut,
-    Const,
-}
-
-impl Mutability {
-    pub(crate) fn emit_wat_inline(&self) -> String {
-        match self {
-            Mutability::Mut => "mut",
-            Mutability::Const => "const",
-        }
-        .into()
-    }
-}
 
 #[derive(Debug)]
 pub(crate) struct Global {
@@ -46,12 +12,12 @@ pub(crate) struct Global {
 
 impl Global {
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
-        let tab = " ".repeat(indent);
         format!(
-            "{tab}(global {} {}\n{}{tab})\n",
+            "{}(global {} {} {})\n",
+            " ".repeat(indent),
             self.global_idx.id_or_comment(module),
             self.global_type.emit_wat_inline(),
-            self.init.emit_wat_block(indent + 2),
+            self.init.emit_wat_inline(),
         )
     }
 }

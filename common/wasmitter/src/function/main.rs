@@ -1,8 +1,10 @@
 use crate::{
-    indices::{FuncIdx, TypeIdx, WasmIndex},
-    internal::FuncUid,
+    indices::{FuncIdx, TypeIdx},
+    instruction::Expr,
+    internal::{FuncUid, WasmIndex},
     module::Module,
-    types::{Expr, ValType},
+    types::ValType,
+    WasmError,
 };
 
 #[derive(Debug)]
@@ -15,6 +17,14 @@ pub(crate) struct Func {
 }
 
 impl Func {
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.body
+            .0
+            .iter()
+            .flat_map(|instr| instr.validate(module, self))
+            .next()
+    }
+
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         let tab = " ".repeat(indent);
         let mut result = String::new();

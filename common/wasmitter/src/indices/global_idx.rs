@@ -1,17 +1,35 @@
-use crate::{indices::WasmIndex, internal::ModuleUid, module::Module, text::Id};
+use crate::{
+    internal::{ModuleUid, WasmIndex},
+    module::Module,
+    text::Id,
+};
+
+#[derive(Clone, Copy, Debug)]
+enum GlobalIdxKind {
+    Imported(u32),
+    Defined(u32),
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct GlobalIdx {
     module_uid: ModuleUid,
-    index: u32,
+    kind: GlobalIdxKind,
     id: Id,
 }
 
 impl GlobalIdx {
-    pub(crate) fn new(module_uid: ModuleUid, index: u32, id: Id) -> Self {
+    pub(crate) fn import(module_uid: ModuleUid, index: u32, id: Id) -> Self {
         Self {
             module_uid,
-            index,
+            kind: GlobalIdxKind::Imported(index),
+            id,
+        }
+    }
+
+    pub(crate) fn define(module_uid: ModuleUid, index: u32, id: Id) -> Self {
+        Self {
+            module_uid,
+            kind: GlobalIdxKind::Defined(index),
             id,
         }
     }
@@ -20,8 +38,11 @@ impl GlobalIdx {
 impl<'a> WasmIndex<'a> for GlobalIdx {
     type Ctx = &'a Module;
 
-    fn resolve(&self, _: &'a Module) -> u32 {
-        self.index
+    fn resolve(&self, module: &'a Module) -> u32 {
+        match self.kind {
+            GlobalIdxKind::Imported(idx) => idx,
+            GlobalIdxKind::Defined(idx) => module.global_import_count() + idx,
+        }
     }
 
     fn id(&self) -> Id {

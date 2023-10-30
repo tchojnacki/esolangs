@@ -1,4 +1,8 @@
-use crate::{indices::WasmIndex, internal::ModuleUid, module::Module, text::Id};
+use crate::{
+    internal::{ModuleUid, WasmIndex},
+    module::Module,
+    text::Id,
+};
 
 #[derive(Clone, Copy, Debug)]
 enum FuncIdxKind {
@@ -37,7 +41,7 @@ impl<'a> WasmIndex<'a> for FuncIdx {
     fn resolve(&self, module: &'a Module) -> u32 {
         match self.kind {
             FuncIdxKind::Imported(idx) => idx,
-            FuncIdxKind::Defined(idx) => module.import_count() + idx,
+            FuncIdxKind::Defined(idx) => module.func_import_count() + idx,
         }
     }
 

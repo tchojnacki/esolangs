@@ -1,40 +1,13 @@
-use super::global;
 use crate::{
     error::WasmError,
-    func::Func,
-    indices::{FuncIdx, GlobalIdx, LocalIdx, MemIdx, TypeIdx, WasmIndex},
-    instructions::ConstInstr,
-    internal::{FuncUid, ModuleUid},
-    module::{
-        Export, ExportDesc, Global, GlobalType, Import, ImportDesc, Mem, MemType, Mutability,
-    },
+    function::{Func, FuncScope},
+    indices::{FuncIdx, GlobalIdx, MemIdx, TypeIdx},
+    instruction::{ConstInstr, Expr},
+    internal::{ModuleUid, WasmIndex},
+    module::{Export, ExportDesc, Global, Import, Mem},
     text::Id,
-    types::{Expr, FuncType, Limits, ResultType, ValType, F32, F64, I32, I64},
+    types::{FuncType, GlobalType, MemType, Mut, ResultType, ValType},
 };
-
-#[derive(Default)]
-pub struct FuncScope {
-    params: Vec<ValType>,
-    results: Vec<ValType>,
-    locals: Vec<ValType>,
-    func_uid: FuncUid,
-}
-
-impl FuncScope {
-    pub fn add_param(&mut self, val_type: ValType) -> LocalIdx {
-        self.params.push(val_type);
-        LocalIdx::param(self.func_uid, (self.params.len() - 1) as u32)
-    }
-
-    pub fn add_local(&mut self, val_type: ValType) -> LocalIdx {
-        self.locals.push(val_type);
-        LocalIdx::local(self.func_uid, (self.locals.len() - 1) as u32)
-    }
-
-    pub fn add_result(&mut self, val_type: ValType) {
-        self.results.push(val_type);
-    }
-}
 
 #[derive(Debug, Default)]
 pub struct Module {
@@ -54,11 +27,19 @@ impl Module {
         Self::default()
     }
 
-    pub(crate) fn import_count(&self) -> u32 {
-        self.imports.len() as u32
+    pub(crate) fn func_import_count(&self) -> u32 {
+        self.imports.iter().filter(|i| Import::is_func(i)).count() as u32
     }
 
-    fn resolve_type(
+    pub(crate) fn mem_import_count(&self) -> u32 {
+        self.imports.iter().filter(|i| Import::is_mem(i)).count() as u32
+    }
+
+    pub(crate) fn global_import_count(&self) -> u32 {
+        self.imports.iter().filter(|i| Import::is_global(i)).count() as u32
+    }
+
+    pub(crate) fn resolve_type(
         &mut self,
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
@@ -87,15 +68,50 @@ impl Module {
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
     ) -> FuncIdx {
-        let module = module.into();
-        let name = name.into();
-        let func_idx = FuncIdx::import(self.uid, self.imports.len() as u32, id.into());
-        let desc = ImportDesc::Func {
-            type_idx: self.resolve_type(params, results),
-            func_idx,
-        };
-        self.imports.push(Import { module, name, desc });
+        let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id.into());
+        let type_idx = self.resolve_type(params, results);
+        self.imports
+            .push(Import::func(module.into(), name.into(), type_idx, func_idx));
         func_idx
+    }
+
+    pub fn import_mem(
+        &mut self,
+        module: impl Into<String>,
+        name: impl Into<String>,
+        id: impl Into<Id>,
+        min_pages: u32,
+        max_pages: u32,
+    ) -> MemIdx {
+        let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id.into());
+        self.imports.push(Import::mem(
+            module.into(),
+            name.into(),
+            MemType::new(min_pages, max_pages),
+            mem_idx,
+        ));
+        mem_idx
+    }
+
+    pub fn import_global(
+        &mut self,
+        module: impl Into<String>,
+        name: impl Into<String>,
+        id: impl Into<Id>,
+        mutability: Mut,
+        val_type: ValType,
+    ) -> GlobalIdx {
+        let global_idx = GlobalIdx::import(self.uid, self.global_import_count(), id.into());
+        self.imports.push(Import::global(
+            module.into(),
+            name.into(),
+            GlobalType {
+                mutability,
+                val_type,
+            },
+            global_idx,
+        ));
+        global_idx
     }
 
     pub fn func<B, E>(&mut self, id: impl Into<Id>, builder: B) -> Result<FuncIdx, WasmError>
@@ -103,27 +119,12 @@ impl Module {
         B: FnOnce(&mut FuncScope) -> E,
         E: Into<Expr>,
     {
-        let mut scope = FuncScope::default();
+        let mut scope = FuncScope::create();
         let body = builder(&mut scope).into();
-        let type_idx = self.resolve_type(scope.params, scope.results);
-        let locals = scope.locals;
         let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id.into());
-        let uid = scope.func_uid;
-        let func = Func {
-            type_idx,
-            func_idx,
-            locals,
-            body,
-            uid,
-        };
+        let func = scope.into_func(self, func_idx, body);
 
-        if let Some(error) = func
-            .body
-            .0
-            .iter()
-            .flat_map(|instr| instr.validate(self, &func))
-            .next()
-        {
+        if let Some(error) = func.validate(self) {
             return Err(error);
         }
 
@@ -132,27 +133,15 @@ impl Module {
     }
 
     pub fn memory(&mut self, id: impl Into<Id>, min_pages: u32, max_pages: u32) -> MemIdx {
-        let mem_idx = MemIdx::new(self.uid, self.mems.len() as u32, id.into());
-        self.mems.push(Mem {
-            mem_type: MemType {
-                limits: Limits {
-                    min: min_pages,
-                    max: max_pages,
-                },
-            },
-            mem_idx,
-        });
+        let mem_idx = MemIdx::define(self.uid, self.mems.len() as u32, id.into());
+        self.mems
+            .push(Mem::new(MemType::new(min_pages, max_pages), mem_idx));
         mem_idx
     }
 
-    pub fn global(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mutability,
-        init: ConstInstr,
-    ) -> GlobalIdx {
+    pub fn global(&mut self, id: impl Into<Id>, mutability: Mut, init: ConstInstr) -> GlobalIdx {
         let val_type = init.return_type();
-        let global_idx = GlobalIdx::new(self.uid, self.globals.len() as u32, id.into());
+        let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id.into());
         self.globals.push(Global {
             global_type: GlobalType {
                 mutability,

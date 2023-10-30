@@ -1,28 +1,22 @@
-use crate::{
-    indices::{MemIdx, WasmIndex},
-    module::Module,
-    types::Limits,
-};
-
-#[derive(Debug)]
-pub(crate) struct MemType {
-    pub(crate) limits: Limits,
-}
+use crate::{indices::MemIdx, internal::WasmIndex, module::Module, types::MemType};
 
 #[derive(Debug)]
 pub(crate) struct Mem {
-    pub(crate) mem_type: MemType,
-    pub(crate) mem_idx: MemIdx,
+    mem_type: MemType,
+    mem_idx: MemIdx,
 }
 
 impl Mem {
+    pub(crate) fn new(mem_type: MemType, mem_idx: MemIdx) -> Self {
+        Self { mem_type, mem_idx }
+    }
+
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
-            "{}(memory {} {} {})\n",
+            "{}(memory {} {})\n",
             " ".repeat(indent),
             self.mem_idx.id_or_comment(module),
-            self.mem_type.limits.min,
-            self.mem_type.limits.max
+            self.mem_type.emit_wat_inline()
         )
     }
 }

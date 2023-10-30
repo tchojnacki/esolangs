@@ -1,15 +1,16 @@
-mod expr;
-mod func_type;
+mod function;
+mod global;
 mod limits;
-mod num_type;
-mod result_type;
-mod val_type;
+mod memory;
+mod number;
+mod result;
+mod value;
 
-pub(crate) use self::limits::Limits;
 pub use self::{
-    expr::Expr,
-    func_type::FuncType,
-    num_type::NumType,
-    result_type::ResultType,
-    val_type::{ValType, F32, F64, I32, I64},
+    function::FuncType,
+    global::Mut,
+    number::NumType,
+    result::ResultType,
+    value::{ValType, F32, F64, I32, I64},
 };
+pub(crate) use self::{global::GlobalType, limits::Limits, memory::MemType};

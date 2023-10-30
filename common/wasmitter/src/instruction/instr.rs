@@ -2,10 +2,12 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     error::WasmError,
-    func::Func,
-    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, TypeIdx, WasmIndex},
+    function::Func,
+    indices::{FuncIdx, GlobalIdx, LabelIdx, LocalIdx, TypeIdx},
+    instruction::Expr,
+    internal::WasmIndex,
     module::Module,
-    types::{Expr, FuncType, ResultType, ValType},
+    types::{FuncType, ResultType, ValType},
 };
 
 #[derive(Clone, Copy, Debug)]

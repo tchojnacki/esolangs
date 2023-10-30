@@ -1,4 +1,4 @@
-use crate::{func::Func, instructions::Instr, module::Module};
+use crate::{function::Func, instruction::Instr, module::Module};
 
 #[derive(Clone, Debug)]
 pub struct Expr(pub(crate) Vec<Instr>);

@@ -1,4 +1,9 @@
-use crate::{func::Func, indices::WasmIndex, internal::FuncUid, module::Module, text::Id};
+use crate::{
+    function::Func,
+    internal::{FuncUid, WasmIndex},
+    module::Module,
+    text::Id,
+};
 
 #[derive(Clone, Copy, Debug)]
 enum LocalIdxKind {

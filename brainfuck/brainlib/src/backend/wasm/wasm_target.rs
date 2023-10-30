@@ -1,6 +1,6 @@
 use wasmitter::{
     indices::FuncIdx,
-    instructions::{Instr as WI, MemArg},
+    instruction::{Instr as WI, MemArg},
     module::Module,
     types::I32,
 };

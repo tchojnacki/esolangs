@@ -1,4 +1,8 @@
-use crate::{indices::WasmIndex, internal::ModuleUid, module::Module, text::Id};
+use crate::{
+    internal::{ModuleUid, WasmIndex},
+    module::Module,
+    text::Id,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct TypeIdx {
