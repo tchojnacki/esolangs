@@ -6,6 +6,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug)]
 enum ImportDesc {
     Func {
@@ -23,6 +24,7 @@ enum ImportDesc {
 }
 
 impl ImportDesc {
+    #[must_use]
     fn validate(&self, module: &Module) -> Option<WasmError> {
         match self {
             ImportDesc::Func { func_idx, .. } => func_idx.validate(module),
@@ -32,6 +34,7 @@ impl ImportDesc {
         }
     }
 
+    #[must_use]
     fn emit_wat_inline(&self, module: &Module) -> String {
         match self {
             ImportDesc::Func { type_idx, func_idx } => {
@@ -54,6 +57,7 @@ impl ImportDesc {
     }
 }
 
+#[must_use]
 #[derive(Debug)]
 pub(crate) struct Import {
     module: String,
@@ -99,22 +103,27 @@ impl Import {
         }
     }
 
+    #[must_use]
     pub(crate) fn is_func(&self) -> bool {
         matches!(self.desc, ImportDesc::Func { .. })
     }
 
+    #[must_use]
     pub(crate) fn is_mem(&self) -> bool {
         matches!(self.desc, ImportDesc::Mem { .. })
     }
 
+    #[must_use]
     pub(crate) fn is_global(&self) -> bool {
         matches!(self.desc, ImportDesc::Global { .. })
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.desc.validate(module)
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(import \"{}\" \"{}\" {})\n",

@@ -7,6 +7,7 @@ use crate::{
     types::{FuncType, ValType},
 };
 
+#[must_use]
 pub struct FuncScope {
     params: Vec<ValType>,
     results: Vec<ValType>,

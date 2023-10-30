@@ -4,6 +4,7 @@ use crate::{
     module::Module,
 };
 
+#[must_use]
 #[derive(Debug)]
 enum ExportDescKind {
     Func(FuncIdx),
@@ -11,6 +12,7 @@ enum ExportDescKind {
     Global(GlobalIdx),
 }
 
+#[must_use]
 #[derive(Debug)]
 pub struct ExportDesc(ExportDescKind);
 
@@ -37,6 +39,7 @@ impl ExportDesc {
         Export { name, desc: self }
     }
 
+    #[must_use]
     fn emit_wat_inline(&self, module: &Module) -> String {
         match self.0 {
             ExportDescKind::Func(idx) => format!("(func {})", idx.id_or_index(module)),
@@ -46,6 +49,7 @@ impl ExportDesc {
     }
 }
 
+#[must_use]
 #[derive(Debug)]
 pub(crate) struct Export {
     name: String,
@@ -53,6 +57,7 @@ pub(crate) struct Export {
 }
 
 impl Export {
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(export \"{}\" {})\n",

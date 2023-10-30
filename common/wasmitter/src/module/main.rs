@@ -9,6 +9,7 @@ use crate::{
     types::{FuncType, Limits, Mut, ResultType, ValType},
 };
 
+#[must_use]
 #[derive(Debug, Default)]
 pub struct Module {
     types: Vec<FuncType>,
@@ -31,14 +32,17 @@ impl Module {
         self.uid
     }
 
+    #[must_use]
     pub(crate) fn func_import_count(&self) -> u32 {
         self.imports.iter().filter(|i| Import::is_func(i)).count() as u32
     }
 
+    #[must_use]
     pub(crate) fn mem_import_count(&self) -> u32 {
         self.imports.iter().filter(|i| Import::is_mem(i)).count() as u32
     }
 
+    #[must_use]
     pub(crate) fn global_import_count(&self) -> u32 {
         self.imports.iter().filter(|i| Import::is_global(i)).count() as u32
     }
@@ -57,6 +61,7 @@ impl Module {
         &self.types[type_idx.resolve(self) as usize]
     }
 
+    #[must_use]
     pub(crate) fn validate(&self) -> Option<WasmError> {
         for func in &self.funcs {
             if let Some(error) = func.validate(self) {

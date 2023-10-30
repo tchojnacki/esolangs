@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+#[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Error)]
 pub enum WasmError {

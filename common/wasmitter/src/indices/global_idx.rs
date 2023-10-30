@@ -5,6 +5,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct GlobalIdx {
     module_uid: ModuleUid,
@@ -29,6 +30,7 @@ impl GlobalIdx {
         }
     }
 
+    #[must_use]
     fn validate_ownership(&self, module: &Module) -> Option<WasmError> {
         if self.module_uid != module.uid() {
             Some(WasmError::ModuleMismatch)
@@ -37,6 +39,7 @@ impl GlobalIdx {
         }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.validate_ownership(module).or(self.id.validate())
     }
@@ -45,6 +48,7 @@ impl GlobalIdx {
 impl<'a> WasmIndex<'a> for GlobalIdx {
     type Ctx = &'a Module;
 
+    #[must_use]
     fn resolve(&self, module: &'a Module) -> u32 {
         self.kind.resolve(module.global_import_count())
     }

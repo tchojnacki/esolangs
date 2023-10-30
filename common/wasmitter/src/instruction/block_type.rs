@@ -4,6 +4,7 @@ use crate::{
     types::{FuncType, ResultType, ValType},
 };
 
+#[must_use]
 #[derive(Debug, Clone)]
 enum BlockTypeKind {
     #[allow(dead_code)]
@@ -11,6 +12,7 @@ enum BlockTypeKind {
     Val(Option<ValType>),
 }
 
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct BlockType(BlockTypeKind);
 
@@ -25,6 +27,7 @@ impl BlockType {
         Self::default()
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self, module: &Module) -> String {
         let func_type = match &self.0 {
             BlockTypeKind::Type(type_idx) => module.get_signature(*type_idx).clone(),

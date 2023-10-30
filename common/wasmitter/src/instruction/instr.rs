@@ -7,6 +7,7 @@ use crate::{
     module::Module,
 };
 
+#[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum Instr {
@@ -195,6 +196,7 @@ pub enum Instr {
 }
 
 impl Instr {
+    #[must_use]
     pub(crate) fn validate(
         &self,
         module: &Module,
@@ -215,6 +217,7 @@ impl Instr {
         }
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, func: &Func, indent: usize) -> String {
         let tab = " ".repeat(indent);
         format!(

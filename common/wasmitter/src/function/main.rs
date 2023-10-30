@@ -7,6 +7,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug)]
 pub(crate) struct Func {
     type_idx: TypeIdx,
@@ -41,6 +42,7 @@ impl Func {
         self.uid
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.type_idx
             .validate(module)
@@ -53,6 +55,7 @@ impl Func {
                 .next())
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         let tab = " ".repeat(indent);
         let mut result = String::new();

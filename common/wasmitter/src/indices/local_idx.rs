@@ -6,12 +6,14 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 enum LocalIdxKind {
     Param(u32),
     Local(u32),
 }
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct LocalIdx {
     func_uid: FuncUid,
@@ -33,6 +35,7 @@ impl LocalIdx {
         }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, func: &Func) -> Option<WasmError> {
         if self.func_uid != func.uid() {
             Some(WasmError::FuncMismatch)
@@ -45,6 +48,7 @@ impl LocalIdx {
 impl<'a> WasmIndex<'a> for LocalIdx {
     type Ctx = (&'a Module, &'a Func);
 
+    #[must_use]
     fn resolve(&self, (module, func): (&'a Module, &'a Func)) -> u32 {
         let func_type = module.get_signature(func.type_idx());
         match self.kind {

@@ -1,5 +1,6 @@
 use crate::types::ValType;
 
+#[must_use]
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct ResultType(Vec<ValType>);
 
@@ -14,6 +15,7 @@ impl ResultType {
         self.0.len()
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self) -> String {
         self.0
             .iter()

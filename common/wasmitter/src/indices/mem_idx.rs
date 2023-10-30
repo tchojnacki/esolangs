@@ -5,6 +5,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct MemIdx {
     module_uid: ModuleUid,
@@ -29,6 +30,7 @@ impl MemIdx {
         }
     }
 
+    #[must_use]
     fn validate_ownership(&self, module: &Module) -> Option<WasmError> {
         if module.uid() != self.module_uid {
             Some(WasmError::ModuleMismatch)
@@ -37,6 +39,7 @@ impl MemIdx {
         }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.validate_ownership(module).or(self.id.validate())
     }
@@ -45,6 +48,7 @@ impl MemIdx {
 impl<'a> WasmIndex<'a> for MemIdx {
     type Ctx = &'a Module;
 
+    #[must_use]
     fn resolve(&self, module: &'a Module) -> u32 {
         self.kind.resolve(module.mem_import_count())
     }

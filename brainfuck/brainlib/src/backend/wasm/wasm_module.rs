@@ -13,6 +13,7 @@ use crate::backend::{
     wasm::WasmTarget,
 };
 
+#[must_use]
 pub struct WasmModule(Module);
 
 impl WasmModule {
@@ -74,6 +75,7 @@ impl WasmModule {
     }
 }
 
+#[must_use]
 fn mut_pointer(settings: &Settings, ptr: GlobalIdx, change: i32) -> Vec<WI> {
     [
         vec![
@@ -117,6 +119,7 @@ fn mut_pointer(settings: &Settings, ptr: GlobalIdx, change: i32) -> Vec<WI> {
     .concat()
 }
 
+#[must_use]
 fn mut_cell(settings: &Settings, ptr: GlobalIdx, change: i8) -> Vec<WI> {
     [
         vec![
@@ -154,6 +157,7 @@ fn mut_cell(settings: &Settings, ptr: GlobalIdx, change: i8) -> Vec<WI> {
     .concat()
 }
 
+#[must_use]
 fn set_cell(ptr: GlobalIdx, value: u8) -> Vec<WI> {
     vec![
         WI::GlobalGet(ptr),
@@ -162,6 +166,7 @@ fn set_cell(ptr: GlobalIdx, value: u8) -> Vec<WI> {
     ]
 }
 
+#[must_use]
 fn input(ptr: GlobalIdx, read_byte: FuncIdx) -> Vec<WI> {
     vec![
         WI::GlobalGet(ptr),
@@ -172,6 +177,7 @@ fn input(ptr: GlobalIdx, read_byte: FuncIdx) -> Vec<WI> {
     ]
 }
 
+#[must_use]
 fn output(ptr: GlobalIdx, write_byte: FuncIdx) -> Vec<WI> {
     vec![
         WI::GlobalGet(ptr),
@@ -180,6 +186,7 @@ fn output(ptr: GlobalIdx, write_byte: FuncIdx) -> Vec<WI> {
     ]
 }
 
+#[must_use]
 fn loop_header(ptr: GlobalIdx) -> Vec<WI> {
     vec![
         WI::GlobalGet(ptr),
@@ -189,6 +196,7 @@ fn loop_header(ptr: GlobalIdx) -> Vec<WI> {
     ]
 }
 
+#[must_use]
 fn loop_trailer(ptr: GlobalIdx) -> Vec<WI> {
     vec![
         WI::GlobalGet(ptr),

@@ -3,6 +3,7 @@ use crate::{
     types::{ValType, F32, F64, I32, I64},
 };
 
+#[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum ConstInstr {
@@ -26,6 +27,7 @@ impl ConstInstr {
         }
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self) -> String {
         match self {
             Self::I32Const(val) => format!("(i32.const {})", *val as i32),

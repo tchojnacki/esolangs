@@ -7,6 +7,7 @@ use wasmitter::{
 
 use crate::Settings;
 
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WasmTarget {
     Normal,
@@ -20,6 +21,7 @@ impl Default for WasmTarget {
 }
 
 impl WasmTarget {
+    #[must_use]
     pub(crate) fn required_pages(&self, settings: &Settings) -> u32 {
         let required_bytes = settings.tape_length()
             + match self {
@@ -92,6 +94,7 @@ impl WasmTarget {
         }
     }
 
+    #[must_use]
     pub(crate) fn main_header(&self, settings: &Settings) -> Vec<WI> {
         match self {
             WasmTarget::Normal => Vec::new(),

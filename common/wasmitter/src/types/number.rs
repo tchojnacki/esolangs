@@ -1,3 +1,4 @@
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NumType {
     I32,
@@ -7,6 +8,7 @@ pub enum NumType {
 }
 
 impl NumType {
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self) -> String {
         match self {
             NumType::I32 => "i32",

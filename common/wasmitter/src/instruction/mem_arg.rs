@@ -1,5 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
+#[must_use]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct MemArg<const N: usize> {
     offset: u32,

@@ -5,9 +5,12 @@ use crate::text::Id;
 pub(crate) trait WasmIndex<'a>: Clone + Copy {
     type Ctx;
 
+    #[must_use]
     fn resolve(&self, ctx: Self::Ctx) -> u32;
+
     fn id(&self) -> Id;
 
+    #[must_use]
     fn id_or_comment(&self, ctx: Self::Ctx) -> Cow<'_, str> {
         match self.id().into_option() {
             Some(a) => a.into(),
@@ -15,6 +18,7 @@ pub(crate) trait WasmIndex<'a>: Clone + Copy {
         }
     }
 
+    #[must_use]
     fn id_or_index(&self, ctx: Self::Ctx) -> Cow<'_, str> {
         match self.id().into_option() {
             Some(a) => a.into(),

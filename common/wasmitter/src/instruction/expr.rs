@@ -3,6 +3,8 @@ use crate::{
     instruction::{ConstInstr, Instr},
     module::Module,
 };
+
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct Expr(pub(crate) Vec<Instr>);
 
@@ -25,6 +27,7 @@ impl From<ConstInstr> for Expr {
 }
 
 impl Expr {
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, func: &Func, indent: usize) -> String {
         self.0
             .iter()

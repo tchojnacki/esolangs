@@ -5,6 +5,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct TypeIdx {
     module_uid: ModuleUid,
@@ -16,6 +17,7 @@ impl TypeIdx {
         Self { module_uid, index }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         if module.uid() != self.module_uid {
             Some(WasmError::ModuleMismatch)
@@ -28,6 +30,7 @@ impl TypeIdx {
 impl<'a> WasmIndex<'a> for TypeIdx {
     type Ctx = &'a Module;
 
+    #[must_use]
     fn resolve(&self, _: &'a Module) -> u32 {
         self.index
     }

@@ -1,5 +1,6 @@
 use crate::types::ResultType;
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct FuncType {
     pub(crate) params: ResultType,
@@ -7,6 +8,7 @@ pub(crate) struct FuncType {
 }
 
 impl FuncType {
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self) -> String {
         let construct_part = |result_type: &ResultType, name: &str| {
             let wat = result_type.emit_wat_inline();

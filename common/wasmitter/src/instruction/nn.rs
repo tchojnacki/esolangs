@@ -1,5 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub enum Nn {
     N32,

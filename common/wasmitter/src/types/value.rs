@@ -1,5 +1,6 @@
 use crate::types::NumType;
 
+#[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValType {
@@ -7,6 +8,7 @@ pub enum ValType {
 }
 
 impl ValType {
+    #[must_use]
     pub(crate) fn emit_wat_inline(&self) -> String {
         match self {
             ValType::Num(num) => num.emit_wat_inline(),

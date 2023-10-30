@@ -1,5 +1,6 @@
 use crate::WasmError;
 
+#[must_use]
 #[derive(Debug)]
 pub struct Limits {
     pub(crate) min: u32,
@@ -7,6 +8,7 @@ pub struct Limits {
 }
 
 impl Limits {
+    #[must_use]
     pub(crate) fn validate(&self) -> Option<WasmError> {
         let min = self.min;
         let max = self.max?;

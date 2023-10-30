@@ -1,5 +1,6 @@
 use crate::{indices::MemIdx, internal::WasmIndex, module::Module, types::MemType, WasmError};
 
+#[must_use]
 #[derive(Debug)]
 pub(crate) struct Mem {
     mem_type: MemType,
@@ -11,10 +12,12 @@ impl Mem {
         Self { mem_type, mem_idx }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.mem_type.validate().or(self.mem_idx.validate(module))
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(memory {} {})\n",

@@ -4,6 +4,7 @@ fn idchar_is_valid(idchar: char) -> bool {
     idchar.is_ascii_alphanumeric() || "!#$%'*+-./:<=>?@\\^_`|~".contains(idchar)
 }
 
+#[must_use]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Id(Option<&'static str>);
 
@@ -12,10 +13,12 @@ impl Id {
         Self(None)
     }
 
+    #[must_use]
     pub(crate) fn into_option(self) -> Option<&'static str> {
         self.0
     }
 
+    #[must_use]
     pub(crate) fn validate(&self) -> Option<WasmError> {
         let id = self.0?;
         let mut chars = id.chars().peekable();

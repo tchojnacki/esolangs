@@ -7,6 +7,7 @@ use crate::{
     WasmError,
 };
 
+#[must_use]
 #[derive(Debug)]
 pub(crate) struct Global {
     global_type: GlobalType,
@@ -27,10 +28,12 @@ impl Global {
         }
     }
 
+    #[must_use]
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
         self.global_idx.validate(module)
     }
 
+    #[must_use]
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(global {} {} {})\n",
