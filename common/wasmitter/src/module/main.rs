@@ -65,7 +65,7 @@ impl Module {
         }
 
         for mem in &self.mems {
-            if let Some(error) = mem.validate() {
+            if let Some(error) = mem.validate(self) {
                 return Some(error);
             }
         }

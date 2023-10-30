@@ -11,7 +11,7 @@ categories = ["compilers", "parser-implementations"]
 publish = false
 
 [dependencies]
-thiserror = "1.0.49"
+thiserror = "1.0.50"
 wasmitter = { path = "../../common/wasmitter" }
 
 [dev-dependencies]

@@ -11,8 +11,8 @@ impl Mem {
         Self { mem_type, mem_idx }
     }
 
-    pub(crate) fn validate(&self) -> Option<WasmError> {
-        self.mem_type.validate().or(self.mem_idx.validate())
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.mem_type.validate().or(self.mem_idx.validate(module))
     }
 
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {

@@ -26,7 +26,8 @@ impl ImportDesc {
     fn validate(&self, module: &Module) -> Option<WasmError> {
         match self {
             ImportDesc::Func { func_idx, .. } => func_idx.validate(module),
-            ImportDesc::Mem { mem_type, mem_idx } => mem_type.validate().or(mem_idx.validate()),
+            ImportDesc::Mem { mem_type, mem_idx } =>
+                mem_type.validate().or(mem_idx.validate(module)),
             ImportDesc::Global { global_idx, .. } => global_idx.validate(module),
         }
     }

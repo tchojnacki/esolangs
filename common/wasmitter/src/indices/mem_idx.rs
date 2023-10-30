@@ -29,8 +29,16 @@ impl MemIdx {
         }
     }
 
-    pub(crate) fn validate(&self) -> Option<WasmError> {
-        self.id.validate()
+    fn validate_ownership(&self, module: &Module) -> Option<WasmError> {
+        if module.uid() != self.module_uid {
+            Some(WasmError::ModuleMismatch)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.validate_ownership(module).or(self.id.validate())
     }
 }
 
