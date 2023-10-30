@@ -37,26 +37,34 @@ impl WasmTarget {
     ) -> (FuncIdx, FuncIdx) {
         match self {
             WasmTarget::Normal => {
-                let read_byte = module.import_func("bf", "input", "$read_byte", (), I32);
-                let write_byte = module.import_func("bf", "output", "$write_byte", I32, ());
+                let read_byte = module
+                    .import_func("bf", "input", "$read_byte", (), I32)
+                    .expect("invalid identifier");
+                let write_byte = module
+                    .import_func("bf", "output", "$write_byte", I32, ())
+                    .expect("invalid identifier");
                 (read_byte, write_byte)
             },
             WasmTarget::Wasi => {
-                let fd_read = module.import_func(
-                    "wasi_unstable",
-                    "fd_read",
-                    "$fd_read",
-                    vec![I32, I32, I32, I32],
-                    I32,
-                );
+                let fd_read = module
+                    .import_func(
+                        "wasi_unstable",
+                        "fd_read",
+                        "$fd_read",
+                        vec![I32, I32, I32, I32],
+                        I32,
+                    )
+                    .expect("invalid identifier");
 
-                let fd_write = module.import_func(
-                    "wasi_unstable",
-                    "fd_write",
-                    "$fd_write",
-                    vec![I32, I32, I32, I32],
-                    I32,
-                );
+                let fd_write = module
+                    .import_func(
+                        "wasi_unstable",
+                        "fd_write",
+                        "$fd_write",
+                        vec![I32, I32, I32, I32],
+                        I32,
+                    )
+                    .expect("invalid identifier");
 
                 let read_byte = module
                     .func("$read_byte", |scope| {

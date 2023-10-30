@@ -67,12 +67,17 @@ impl Module {
         id: impl Into<Id>,
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
-    ) -> FuncIdx {
-        let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id.into());
+    ) -> Result<FuncIdx, WasmError> {
+        let id = id.into();
+        if let Some(error) = id.validate() {
+            return Err(error);
+        }
+
+        let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id);
         let type_idx = self.resolve_type(params, results);
         self.imports
             .push(Import::func(module.into(), name.into(), type_idx, func_idx));
-        func_idx
+        Ok(func_idx)
     }
 
     pub fn import_mem(
@@ -82,11 +87,13 @@ impl Module {
         id: impl Into<Id>,
         pages: impl Into<Limits>,
     ) -> Result<MemIdx, WasmError> {
+        let id = id.into();
         let pages = pages.into();
-        if let Some(error) = pages.validate() {
+        if let Some(error) = id.validate().or(pages.validate()) {
             return Err(error);
         }
-        let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id.into());
+
+        let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id);
         self.imports.push(Import::mem(
             module.into(),
             name.into(),
@@ -103,8 +110,13 @@ impl Module {
         id: impl Into<Id>,
         mutability: Mut,
         val_type: ValType,
-    ) -> GlobalIdx {
-        let global_idx = GlobalIdx::import(self.uid, self.global_import_count(), id.into());
+    ) -> Result<GlobalIdx, WasmError> {
+        let id = id.into();
+        if let Some(error) = id.validate() {
+            return Err(error);
+        }
+
+        let global_idx = GlobalIdx::import(self.uid, self.global_import_count(), id);
         self.imports.push(Import::global(
             module.into(),
             name.into(),
@@ -114,7 +126,7 @@ impl Module {
             },
             global_idx,
         ));
-        global_idx
+        Ok(global_idx)
     }
 
     pub fn func<B, E>(&mut self, id: impl Into<Id>, builder: B) -> Result<FuncIdx, WasmError>
@@ -122,11 +134,15 @@ impl Module {
         B: FnOnce(&mut FuncScope) -> E,
         E: Into<Expr>,
     {
+        let id = id.into();
+        if let Some(error) = id.validate() {
+            return Err(error);
+        }
+
         let mut scope = FuncScope::create();
         let body = builder(&mut scope).into();
-        let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id.into());
+        let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id);
         let func = scope.into_func(self, func_idx, body);
-
         if let Some(error) = func.validate(self) {
             return Err(error);
         }
@@ -144,14 +160,25 @@ impl Module {
         if let Some(error) = pages.validate() {
             return Err(error);
         }
+
         let mem_idx = MemIdx::define(self.uid, self.mems.len() as u32, id.into());
         self.mems.push(Mem::new(pages.into(), mem_idx));
         Ok(mem_idx)
     }
 
-    pub fn global(&mut self, id: impl Into<Id>, mutability: Mut, init: ConstInstr) -> GlobalIdx {
+    pub fn global(
+        &mut self,
+        id: impl Into<Id>,
+        mutability: Mut,
+        init: ConstInstr,
+    ) -> Result<GlobalIdx, WasmError> {
+        let id = id.into();
+        if let Some(error) = id.validate() {
+            return Err(error);
+        }
+
         let val_type = init.return_type();
-        let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id.into());
+        let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id);
         self.globals.push(Global {
             global_type: GlobalType {
                 mutability,
@@ -160,7 +187,7 @@ impl Module {
             init,
             global_idx,
         });
-        global_idx
+        Ok(global_idx)
     }
 
     pub fn export(&mut self, name: impl Into<String>, desc: impl Into<ExportDesc>) {

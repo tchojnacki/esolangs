@@ -2,5 +2,6 @@
 pub enum WasmError {
     ModuleMismatch,
     FuncMismatch,
-    InvalidLimits,
+    InvalidLimits { min: u32, max: u32 },
+    InvalidIdentifier { id: &'static str },
 }

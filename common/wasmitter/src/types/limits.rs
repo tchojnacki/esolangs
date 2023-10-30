@@ -8,9 +8,13 @@ pub struct Limits {
 
 impl Limits {
     pub(crate) fn validate(&self) -> Option<WasmError> {
-        match self.max {
-            Some(max) if max < self.min => Some(WasmError::InvalidLimits),
-            _ => None,
+        let min = self.min;
+        let max = self.max?;
+
+        if min <= max {
+            None
+        } else {
+            Some(WasmError::InvalidLimits { min, max })
         }
     }
 }

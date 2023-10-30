@@ -22,7 +22,9 @@ impl WasmModule {
         let pages = target.required_pages(settings);
         let (read_byte, write_byte) = target.inject_io_funcs(&mut module, settings);
 
-        let ptr = module.global("$ptr", Mut::Var, CWI::I32Const(0));
+        let ptr = module
+            .global("$ptr", Mut::Var, CWI::I32Const(0))
+            .expect("invalid identifier");
         let memory = module
             .memory(Id::none(), (pages, pages))
             .expect("invalid memory limits");
