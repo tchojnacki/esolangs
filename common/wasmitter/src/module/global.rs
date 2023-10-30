@@ -27,8 +27,8 @@ impl Global {
         }
     }
 
-    pub(crate) fn validate(&self) -> Option<WasmError> {
-        self.global_idx.validate()
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.global_idx.validate(module)
     }
 
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {

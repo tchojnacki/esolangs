@@ -7,7 +7,6 @@ pub(crate) trait WasmIndex<'a>: Clone + Copy {
 
     fn resolve(&self, ctx: Self::Ctx) -> u32;
     fn id(&self) -> Id;
-    fn belongs_to(&self, ctx: Self::Ctx) -> bool;
 
     fn id_or_comment(&self, ctx: Self::Ctx) -> Cow<'_, str> {
         match self.id().into_option() {

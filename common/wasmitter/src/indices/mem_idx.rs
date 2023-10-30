@@ -44,8 +44,4 @@ impl<'a> WasmIndex<'a> for MemIdx {
     fn id(&self) -> Id {
         self.id
     }
-
-    fn belongs_to(&self, module: &'a Module) -> bool {
-        self.module_uid == module.uid()
-    }
 }

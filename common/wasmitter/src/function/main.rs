@@ -42,11 +42,11 @@ impl Func {
     }
 
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
-        self.func_idx.validate().or(self
+        self.func_idx.validate(module).or(self
             .body
             .0
             .iter()
-            .flat_map(|instr| instr.validate(module, self))
+            .flat_map(|instr| instr.validate(module, self, 0))
             .next())
     }
 

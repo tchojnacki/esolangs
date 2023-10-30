@@ -23,11 +23,11 @@ enum ImportDesc {
 }
 
 impl ImportDesc {
-    fn validate(&self) -> Option<WasmError> {
+    fn validate(&self, module: &Module) -> Option<WasmError> {
         match self {
-            ImportDesc::Func { func_idx, .. } => func_idx.validate(),
+            ImportDesc::Func { func_idx, .. } => func_idx.validate(module),
             ImportDesc::Mem { mem_type, mem_idx } => mem_type.validate().or(mem_idx.validate()),
-            ImportDesc::Global { global_idx, .. } => global_idx.validate(),
+            ImportDesc::Global { global_idx, .. } => global_idx.validate(module),
         }
     }
 
@@ -110,8 +110,8 @@ impl Import {
         matches!(self.desc, ImportDesc::Global { .. })
     }
 
-    pub(crate) fn validate(&self) -> Option<WasmError> {
-        self.desc.validate()
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.desc.validate(module)
     }
 
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {

@@ -195,30 +195,22 @@ pub enum Instr {
 }
 
 impl Instr {
-    pub(crate) fn validate(&self, module: &Module, func: &Func) -> Option<WasmError> {
+    pub(crate) fn validate(
+        &self,
+        module: &Module,
+        func: &Func,
+        blocks: usize,
+    ) -> Option<WasmError> {
         match self {
             Instr::LocalGet(idx) | Instr::LocalSet(idx) | Instr::LocalTee(idx) =>
-                if idx.belongs_to((module, func)) {
-                    None
-                } else {
-                    Some(WasmError::FuncMismatch)
-                },
-            Instr::GlobalGet(idx) | Instr::GlobalSet(idx) =>
-                if idx.belongs_to(module) {
-                    None
-                } else {
-                    Some(WasmError::ModuleMismatch)
-                },
+                idx.validate(func),
+            Instr::GlobalGet(idx) | Instr::GlobalSet(idx) => idx.validate(module),
             Instr::Block(_, instrs) | Instr::Loop(_, instrs) => instrs
                 .iter()
-                .flat_map(|instr| instr.validate(module, func))
+                .flat_map(|instr| instr.validate(module, func, blocks + 1))
                 .next(),
-            Instr::Call(idx) =>
-                if idx.belongs_to(module) {
-                    None
-                } else {
-                    Some(WasmError::ModuleMismatch)
-                },
+            Instr::Br(idx) | Instr::BrIf(idx) => idx.validate(blocks),
+            Instr::Call(idx) => idx.validate(module),
             _ => None,
         }
     }

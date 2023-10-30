@@ -29,8 +29,16 @@ impl GlobalIdx {
         }
     }
 
-    pub(crate) fn validate(&self) -> Option<WasmError> {
-        self.id.validate()
+    fn validate_ownership(&self, module: &Module) -> Option<WasmError> {
+        if self.module_uid != module.uid() {
+            Some(WasmError::ModuleMismatch)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
+        self.validate_ownership(module).or(self.id.validate())
     }
 }
 
@@ -43,9 +51,5 @@ impl<'a> WasmIndex<'a> for GlobalIdx {
 
     fn id(&self) -> Id {
         self.id
-    }
-
-    fn belongs_to(&self, module: &'a Module) -> bool {
-        self.module_uid == module.uid()
     }
 }

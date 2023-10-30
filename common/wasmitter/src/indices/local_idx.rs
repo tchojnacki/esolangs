@@ -3,6 +3,7 @@ use crate::{
     internal::{FuncUid, WasmIndex},
     module::Module,
     text::Id,
+    WasmError,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -31,6 +32,14 @@ impl LocalIdx {
             func_uid,
         }
     }
+
+    pub(crate) fn validate(&self, func: &Func) -> Option<WasmError> {
+        if self.func_uid != func.uid() {
+            Some(WasmError::FuncMismatch)
+        } else {
+            None
+        }
+    }
 }
 
 impl<'a> WasmIndex<'a> for LocalIdx {
@@ -46,9 +55,5 @@ impl<'a> WasmIndex<'a> for LocalIdx {
 
     fn id(&self) -> Id {
         Id::none()
-    }
-
-    fn belongs_to(&self, (_, func): (&'a Module, &'a Func)) -> bool {
-        self.func_uid == func.uid()
     }
 }

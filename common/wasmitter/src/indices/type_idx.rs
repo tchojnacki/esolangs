@@ -26,8 +26,4 @@ impl<'a> WasmIndex<'a> for TypeIdx {
     fn id(&self) -> Id {
         Id::none()
     }
-
-    fn belongs_to(&self, module: &'a Module) -> bool {
-        self.module_uid == module.uid()
-    }
 }

@@ -71,13 +71,13 @@ impl Module {
         }
 
         for global in &self.globals {
-            if let Some(error) = global.validate() {
+            if let Some(error) = global.validate(self) {
                 return Some(error);
             }
         }
 
         for import in &self.imports {
-            if let Some(error) = import.validate() {
+            if let Some(error) = import.validate(self) {
                 return Some(error);
             }
         }
