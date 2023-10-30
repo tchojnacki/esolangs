@@ -1,4 +1,4 @@
-use crate::types::Limits;
+use crate::{types::Limits, WasmError};
 
 #[derive(Debug)]
 pub(crate) struct MemType {
@@ -6,6 +6,10 @@ pub(crate) struct MemType {
 }
 
 impl MemType {
+    pub(crate) fn validate(&self) -> Option<WasmError> {
+        self.limits.validate()
+    }
+
     pub(crate) fn emit_wat_inline(&self) -> String {
         match self.limits.max {
             Some(max) => format!("{} {}", self.limits.min, max),

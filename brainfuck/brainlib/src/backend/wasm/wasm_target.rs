@@ -37,67 +37,55 @@ impl WasmTarget {
     ) -> (FuncIdx, FuncIdx) {
         match self {
             WasmTarget::Normal => {
-                let read_byte = module
-                    .import_func("bf", "input", "$read_byte", (), I32)
-                    .expect("invalid identifier");
-                let write_byte = module
-                    .import_func("bf", "output", "$write_byte", I32, ())
-                    .expect("invalid identifier");
+                let read_byte = module.import_func("bf", "input", "$read_byte", (), I32);
+                let write_byte = module.import_func("bf", "output", "$write_byte", I32, ());
                 (read_byte, write_byte)
             },
             WasmTarget::Wasi => {
-                let fd_read = module
-                    .import_func(
-                        "wasi_unstable",
-                        "fd_read",
-                        "$fd_read",
-                        vec![I32, I32, I32, I32],
-                        I32,
-                    )
-                    .expect("invalid identifier");
+                let fd_read = module.import_func(
+                    "wasi_unstable",
+                    "fd_read",
+                    "$fd_read",
+                    vec![I32, I32, I32, I32],
+                    I32,
+                );
 
-                let fd_write = module
-                    .import_func(
-                        "wasi_unstable",
-                        "fd_write",
-                        "$fd_write",
-                        vec![I32, I32, I32, I32],
-                        I32,
-                    )
-                    .expect("invalid identifier");
+                let fd_write = module.import_func(
+                    "wasi_unstable",
+                    "fd_write",
+                    "$fd_write",
+                    vec![I32, I32, I32, I32],
+                    I32,
+                );
 
-                let read_byte = module
-                    .func("$read_byte", |scope| {
-                        scope.add_result(I32);
-                        vec![
-                            WI::I32Const(0),
-                            WI::I32Const(settings.tape_length() + 4),
-                            WI::I32Const(1),
-                            WI::I32Const(settings.tape_length()),
-                            WI::Call(fd_read),
-                            WI::Drop,
-                            WI::I32Const(settings.tape_length() + 12),
-                            WI::I32Load(MemArg::default()),
-                        ]
-                    })
-                    .expect("failed to create $read_byte");
+                let read_byte = module.func("$read_byte", |scope| {
+                    scope.add_result(I32);
+                    vec![
+                        WI::I32Const(0),
+                        WI::I32Const(settings.tape_length() + 4),
+                        WI::I32Const(1),
+                        WI::I32Const(settings.tape_length()),
+                        WI::Call(fd_read),
+                        WI::Drop,
+                        WI::I32Const(settings.tape_length() + 12),
+                        WI::I32Load(MemArg::default()),
+                    ]
+                });
 
-                let write_byte = module
-                    .func("$write_byte", |scope| {
-                        let value = scope.add_param(I32);
-                        vec![
-                            WI::I32Const(settings.tape_length() + 24),
-                            WI::LocalGet(value),
-                            WI::I32Store(MemArg::default()),
-                            WI::I32Const(1),
-                            WI::I32Const(settings.tape_length() + 16),
-                            WI::I32Const(1),
-                            WI::I32Const(settings.tape_length()),
-                            WI::Call(fd_write),
-                            WI::Drop,
-                        ]
-                    })
-                    .expect("failed to create $write_byte");
+                let write_byte = module.func("$write_byte", |scope| {
+                    let value = scope.add_param(I32);
+                    vec![
+                        WI::I32Const(settings.tape_length() + 24),
+                        WI::LocalGet(value),
+                        WI::I32Store(MemArg::default()),
+                        WI::I32Const(1),
+                        WI::I32Const(settings.tape_length() + 16),
+                        WI::I32Const(1),
+                        WI::I32Const(settings.tape_length()),
+                        WI::Call(fd_write),
+                        WI::Drop,
+                    ]
+                });
 
                 (read_byte, write_byte)
             },

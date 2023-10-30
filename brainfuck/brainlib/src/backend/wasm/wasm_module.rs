@@ -22,12 +22,8 @@ impl WasmModule {
         let pages = target.required_pages(settings);
         let (read_byte, write_byte) = target.inject_io_funcs(&mut module, settings);
 
-        let ptr = module
-            .global("$ptr", Mut::Var, CWI::I32Const(0))
-            .expect("invalid identifier");
-        let memory = module
-            .memory(Id::none(), (pages, pages))
-            .expect("invalid memory limits");
+        let ptr = module.global("$ptr", Mut::Var, CWI::I32Const(0));
+        let memory = module.memory(Id::none(), (pages, pages));
 
         let mut stack = vec![Vec::new()];
 
@@ -61,13 +57,11 @@ impl WasmModule {
             }
         }
 
-        let main = module
-            .func("$main", |_| {
-                let body = stack.pop().expect("unexpected stack underflow");
-                assert!(stack.is_empty(), "unexpected stack overflow");
-                [target.main_header(settings), body].concat()
-            })
-            .expect("failed to create the main WASM function");
+        let main = module.func("$main", |_| {
+            let body = stack.pop().expect("unexpected stack underflow");
+            assert!(stack.is_empty(), "unexpected stack overflow");
+            [target.main_header(settings), body].concat()
+        });
 
         module.export("memory", memory);
         module.export("_start", main);
@@ -76,7 +70,7 @@ impl WasmModule {
     }
 
     pub fn emit_wat(&self, mut write: impl Write) -> io::Result<()> {
-        write.write_all(self.0.to_wat().as_bytes())
+        write.write_all(self.0.to_wat().expect("internal error").as_bytes())
     }
 }
 

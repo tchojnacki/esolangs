@@ -2,6 +2,7 @@ use crate::{
     internal::{IndexKind, ModuleUid, WasmIndex},
     module::Module,
     text::Id,
+    WasmError,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -26,6 +27,10 @@ impl GlobalIdx {
             kind: IndexKind::Defined(index),
             id,
         }
+    }
+
+    pub(crate) fn validate(&self) -> Option<WasmError> {
+        self.id.validate()
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     indices::GlobalIdx, instruction::ConstInstr, internal::WasmIndex, module::Module,
-    types::GlobalType,
+    types::GlobalType, WasmError,
 };
 
 #[derive(Debug)]
@@ -11,6 +11,10 @@ pub(crate) struct Global {
 }
 
 impl Global {
+    pub(crate) fn validate(&self) -> Option<WasmError> {
+        self.global_idx.validate()
+    }
+
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {
         format!(
             "{}(global {} {} {})\n",

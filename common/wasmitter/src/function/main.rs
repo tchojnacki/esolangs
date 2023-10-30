@@ -18,11 +18,12 @@ pub(crate) struct Func {
 
 impl Func {
     pub(crate) fn validate(&self, module: &Module) -> Option<WasmError> {
-        self.body
+        self.func_idx.validate().or(self
+            .body
             .0
             .iter()
             .flat_map(|instr| instr.validate(module, self))
-            .next()
+            .next())
     }
 
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {

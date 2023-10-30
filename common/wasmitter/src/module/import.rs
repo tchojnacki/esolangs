@@ -3,6 +3,7 @@ use crate::{
     internal::WasmIndex,
     module::Module,
     types::{GlobalType, MemType},
+    WasmError,
 };
 
 #[derive(Debug)]
@@ -22,6 +23,14 @@ enum ImportDesc {
 }
 
 impl ImportDesc {
+    fn validate(&self) -> Option<WasmError> {
+        match self {
+            ImportDesc::Func { func_idx, .. } => func_idx.validate(),
+            ImportDesc::Mem { mem_type, mem_idx } => mem_type.validate().or(mem_idx.validate()),
+            ImportDesc::Global { global_idx, .. } => global_idx.validate(),
+        }
+    }
+
     fn emit_wat_inline(&self, module: &Module) -> String {
         match self {
             ImportDesc::Func { type_idx, func_idx } => {
@@ -94,6 +103,10 @@ impl Import {
 
     pub(crate) fn is_global(&self) -> bool {
         matches!(self.desc, ImportDesc::Global { .. })
+    }
+
+    pub(crate) fn validate(&self) -> Option<WasmError> {
+        self.desc.validate()
     }
 
     pub(crate) fn emit_wat_block(&self, module: &Module, indent: usize) -> String {

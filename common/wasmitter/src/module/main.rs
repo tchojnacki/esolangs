@@ -60,6 +60,34 @@ impl Module {
         &self.types[type_idx.resolve(self) as usize]
     }
 
+    pub(crate) fn validate(&self) -> Option<WasmError> {
+        for func in &self.funcs {
+            if let Some(error) = func.validate(self) {
+                return Some(error);
+            }
+        }
+
+        for mem in &self.mems {
+            if let Some(error) = mem.validate() {
+                return Some(error);
+            }
+        }
+
+        for global in &self.globals {
+            if let Some(error) = global.validate() {
+                return Some(error);
+            }
+        }
+
+        for import in &self.imports {
+            if let Some(error) = import.validate() {
+                return Some(error);
+            }
+        }
+
+        None
+    }
+
     pub fn import_func(
         &mut self,
         module: impl Into<String>,
@@ -67,17 +95,12 @@ impl Module {
         id: impl Into<Id>,
         params: impl Into<ResultType>,
         results: impl Into<ResultType>,
-    ) -> Result<FuncIdx, WasmError> {
-        let id = id.into();
-        if let Some(error) = id.validate() {
-            return Err(error);
-        }
-
-        let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id);
+    ) -> FuncIdx {
+        let func_idx = FuncIdx::import(self.uid, self.func_import_count(), id.into());
         let type_idx = self.resolve_type(params, results);
         self.imports
             .push(Import::func(module.into(), name.into(), type_idx, func_idx));
-        Ok(func_idx)
+        func_idx
     }
 
     pub fn import_mem(
@@ -86,21 +109,15 @@ impl Module {
         name: impl Into<String>,
         id: impl Into<Id>,
         pages: impl Into<Limits>,
-    ) -> Result<MemIdx, WasmError> {
-        let id = id.into();
-        let pages = pages.into();
-        if let Some(error) = id.validate().or(pages.validate()) {
-            return Err(error);
-        }
-
-        let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id);
+    ) -> MemIdx {
+        let mem_idx = MemIdx::import(self.uid, self.mem_import_count(), id.into());
         self.imports.push(Import::mem(
             module.into(),
             name.into(),
-            pages.into(),
+            pages.into().into(),
             mem_idx,
         ));
-        Ok(mem_idx)
+        mem_idx
     }
 
     pub fn import_global(
@@ -110,13 +127,8 @@ impl Module {
         id: impl Into<Id>,
         mutability: Mut,
         val_type: ValType,
-    ) -> Result<GlobalIdx, WasmError> {
-        let id = id.into();
-        if let Some(error) = id.validate() {
-            return Err(error);
-        }
-
-        let global_idx = GlobalIdx::import(self.uid, self.global_import_count(), id);
+    ) -> GlobalIdx {
+        let global_idx = GlobalIdx::import(self.uid, self.global_import_count(), id.into());
         self.imports.push(Import::global(
             module.into(),
             name.into(),
@@ -126,59 +138,31 @@ impl Module {
             },
             global_idx,
         ));
-        Ok(global_idx)
+        global_idx
     }
 
-    pub fn func<B, E>(&mut self, id: impl Into<Id>, builder: B) -> Result<FuncIdx, WasmError>
+    pub fn func<B, E>(&mut self, id: impl Into<Id>, builder: B) -> FuncIdx
     where
         B: FnOnce(&mut FuncScope) -> E,
         E: Into<Expr>,
     {
-        let id = id.into();
-        if let Some(error) = id.validate() {
-            return Err(error);
-        }
-
         let mut scope = FuncScope::create();
         let body = builder(&mut scope).into();
-        let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id);
+        let func_idx = FuncIdx::define(self.uid, self.funcs.len() as u32, id.into());
         let func = scope.into_func(self, func_idx, body);
-        if let Some(error) = func.validate(self) {
-            return Err(error);
-        }
-
         self.funcs.push(func);
-        Ok(func_idx)
+        func_idx
     }
 
-    pub fn memory(
-        &mut self,
-        id: impl Into<Id>,
-        pages: impl Into<Limits>,
-    ) -> Result<MemIdx, WasmError> {
-        let pages = pages.into();
-        if let Some(error) = pages.validate() {
-            return Err(error);
-        }
-
+    pub fn memory(&mut self, id: impl Into<Id>, pages: impl Into<Limits>) -> MemIdx {
         let mem_idx = MemIdx::define(self.uid, self.mems.len() as u32, id.into());
-        self.mems.push(Mem::new(pages.into(), mem_idx));
-        Ok(mem_idx)
+        self.mems.push(Mem::new(pages.into().into(), mem_idx));
+        mem_idx
     }
 
-    pub fn global(
-        &mut self,
-        id: impl Into<Id>,
-        mutability: Mut,
-        init: ConstInstr,
-    ) -> Result<GlobalIdx, WasmError> {
-        let id = id.into();
-        if let Some(error) = id.validate() {
-            return Err(error);
-        }
-
+    pub fn global(&mut self, id: impl Into<Id>, mutability: Mut, init: ConstInstr) -> GlobalIdx {
         let val_type = init.return_type();
-        let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id);
+        let global_idx = GlobalIdx::define(self.uid, self.globals.len() as u32, id.into());
         self.globals.push(Global {
             global_type: GlobalType {
                 mutability,
@@ -187,7 +171,7 @@ impl Module {
             init,
             global_idx,
         });
-        Ok(global_idx)
+        global_idx
     }
 
     pub fn export(&mut self, name: impl Into<String>, desc: impl Into<ExportDesc>) {
@@ -196,16 +180,16 @@ impl Module {
         self.exports.push(Export { name, desc });
     }
 
-    pub fn to_wat(&self) -> String {
+    pub fn to_wat(&self) -> Result<String, WasmError> {
+        if let Some(error) = self.validate() {
+            return Err(error);
+        }
+
         let mut result = String::new();
         result.push_str("(module\n");
 
         for import in &self.imports {
             result.push_str(&import.emit_wat_block(self, 2));
-        }
-
-        for func in &self.funcs {
-            result.push_str(&func.emit_wat_block(self, 2));
         }
 
         for mem in &self.mems {
@@ -216,11 +200,15 @@ impl Module {
             result.push_str(&global.emit_wat_block(self, 2));
         }
 
+        for func in &self.funcs {
+            result.push_str(&func.emit_wat_block(self, 2));
+        }
+
         for export in &self.exports {
             result.push_str(&export.emit_wat_block(self, 2));
         }
 
         result.push_str(")\n");
-        result
+        Ok(result)
     }
 }
