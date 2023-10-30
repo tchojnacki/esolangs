@@ -1,19 +1,13 @@
 use crate::{
-    internal::{ModuleUid, WasmIndex},
+    internal::{IndexKind, ModuleUid, WasmIndex},
     module::Module,
     text::Id,
 };
 
 #[derive(Clone, Copy, Debug)]
-enum FuncIdxKind {
-    Imported(u32),
-    Defined(u32),
-}
-
-#[derive(Clone, Copy, Debug)]
 pub struct FuncIdx {
     module_uid: ModuleUid,
-    kind: FuncIdxKind,
+    kind: IndexKind,
     id: Id,
 }
 
@@ -21,7 +15,7 @@ impl FuncIdx {
     pub(crate) fn import(module_uid: ModuleUid, index: u32, id: Id) -> Self {
         Self {
             module_uid,
-            kind: FuncIdxKind::Imported(index),
+            kind: IndexKind::Imported(index),
             id,
         }
     }
@@ -29,7 +23,7 @@ impl FuncIdx {
     pub(crate) fn define(module_uid: ModuleUid, index: u32, id: Id) -> Self {
         Self {
             module_uid,
-            kind: FuncIdxKind::Defined(index),
+            kind: IndexKind::Defined(index),
             id,
         }
     }
@@ -39,10 +33,7 @@ impl<'a> WasmIndex<'a> for FuncIdx {
     type Ctx = &'a Module;
 
     fn resolve(&self, module: &'a Module) -> u32 {
-        match self.kind {
-            FuncIdxKind::Imported(idx) => idx,
-            FuncIdxKind::Defined(idx) => module.func_import_count() + idx,
-        }
+        self.kind.resolve(module.func_import_count())
     }
 
     fn id(&self) -> Id {
