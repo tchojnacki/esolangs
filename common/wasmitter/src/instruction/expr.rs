@@ -3,7 +3,7 @@ use crate::{
     instruction::{ConstInstr, Instr},
     module::Module,
 };
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct Expr(pub(crate) Vec<Instr>);
 
 impl From<Vec<Instr>> for Expr {

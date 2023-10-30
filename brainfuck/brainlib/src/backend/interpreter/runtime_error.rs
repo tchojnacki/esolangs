@@ -2,7 +2,7 @@ use thiserror::Error;
 
 /// Error which occurs during the interpretation of the code.
 #[must_use]
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Error)]
 pub enum RuntimeError {
     /// The input could not be read from for an unknown reason.
     #[error("input error")]

@@ -5,7 +5,7 @@ pub(crate) struct Token {
 }
 
 #[must_use]
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TokenKind {
     Right,
     Left,

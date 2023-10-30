@@ -12,7 +12,7 @@
 /// # Ok::<(), Box<dyn Error>>(())
 /// ```
 #[must_use]
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Settings {
     tape_length: u32,
     strict: bool,

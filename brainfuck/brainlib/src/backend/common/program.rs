@@ -10,7 +10,7 @@ use crate::{
 ///
 /// The list can be obtained from [`Program::compile`].
 #[must_use]
-#[derive(Clone, Eq, PartialEq, Debug, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Program(pub(crate) Vec<Instruction>);
 
 impl Program {

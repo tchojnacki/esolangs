@@ -6,13 +6,13 @@ use crate::{
     WasmError,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 enum LocalIdxKind {
     Param(u32),
     Local(u32),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LocalIdx {
     func_uid: FuncUid,
     kind: LocalIdxKind,

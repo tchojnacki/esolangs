@@ -1,6 +1,6 @@
 use crate::{internal::WasmIndex, text::Id, WasmError};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LabelIdx(pub(crate) u32);
 
 impl LabelIdx {

@@ -304,7 +304,7 @@ mod tests {
         *gen.choose(&range.collect::<Vec<_>>()).unwrap()
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Debug, Clone)]
     struct SimpleProgram(Program);
 
     impl Arbitrary for SimpleProgram {

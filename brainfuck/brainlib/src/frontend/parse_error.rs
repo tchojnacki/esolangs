@@ -4,7 +4,7 @@ use thiserror::Error;
 ///
 /// This can occur during [compilation](crate::Program::compile).
 #[must_use]
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Error)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Error)]
 pub enum ParseError {
     /// The loop end character `]` was found at `end_pos`, but it was not preceded by a loop start character `[`.
     #[error("unexpected loop end at position {end_pos}")]

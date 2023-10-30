@@ -5,7 +5,7 @@ use crate::{
     WasmError,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct TypeIdx {
     module_uid: ModuleUid,
     index: u32,

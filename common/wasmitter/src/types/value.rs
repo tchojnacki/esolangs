@@ -1,7 +1,7 @@
 use crate::types::NumType;
 
 #[non_exhaustive]
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ValType {
     Num(NumType),
 }

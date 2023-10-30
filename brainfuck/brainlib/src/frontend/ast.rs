@@ -1,5 +1,5 @@
 #[must_use]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Node {
     Right,
     Left,

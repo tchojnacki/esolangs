@@ -5,7 +5,7 @@ use crate::{
     WasmError,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct GlobalIdx {
     module_uid: ModuleUid,
     kind: IndexKind,

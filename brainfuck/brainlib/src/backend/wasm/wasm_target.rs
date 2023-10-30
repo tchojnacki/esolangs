@@ -7,7 +7,7 @@ use wasmitter::{
 
 use crate::Settings;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WasmTarget {
     Normal,
     Wasi,

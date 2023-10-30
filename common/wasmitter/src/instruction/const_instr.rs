@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum ConstInstr {
     /// `i32.const u32`
     I32Const(u32),

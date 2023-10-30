@@ -26,7 +26,7 @@ impl From<&Arguments> for Settings {
     }
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Target {
     /// Run the code directly from the command line
     Run,

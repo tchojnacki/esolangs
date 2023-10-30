@@ -8,7 +8,7 @@ use crate::{
 
 /// A generic representation of the interpreter's engine state.
 #[must_use]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Engine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
