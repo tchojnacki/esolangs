@@ -16,12 +16,15 @@ pub struct Program(pub(crate) Vec<Instruction>);
 impl Program {
     /// Produces a [`Program`] from a string of Brainfuck source code.
     ///
+    /// # Errors
+    /// Returns [`ParseError`] whenever the source code is invalid.
+    ///
+    /// # Examples
     /// ```
-    /// # use std::error::Error;
     /// # use brainlib::{Program, Settings};
     /// let program = Program::compile("+++", &Settings::new().with_debug())?;
     /// assert_eq!(program.to_string(), "+++");
-    /// # Ok::<(), Box<dyn Error>>(())
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn compile(source: impl AsRef<str>, settings: &Settings) -> Result<Self, ParseError> {
         let tokens = tokenize(source.as_ref());
@@ -37,23 +40,25 @@ impl Program {
 
     /// Returns the list of [`Instruction`]s contained in the [`Program`].
     ///
+    /// # Examples
     /// ```
-    /// # use std::error::Error;
     /// # use brainlib::{Program, Instruction, Settings};
     /// let program = Program::compile("+++", &Settings::new())?;
     /// assert_eq!(program.code(), &[Instruction::MutCell(3)]);
-    /// # Ok::<(), Box<dyn Error>>(())
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn code(&self) -> &[Instruction] {
         &self.0
     }
 
     /// Returns the number of [`Instruction`]s contained in the [`Program`].
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
     /// Returns `true` if the [`Program`] contains no [`Instruction`]s.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

@@ -2,8 +2,8 @@
 //!
 //! This includes input/output operations.
 //!
+//! # Examples
 //! ```
-//! # use std::error::Error;
 //! use brainlib::util::{read_byte, write_byte};
 //!
 //! let input = "X".as_bytes();
@@ -13,7 +13,7 @@
 //! let byte = read_byte(input).ok_or("could not read")?;
 //! write_byte(&mut output, byte).ok_or("could not write")?;
 //! # assert_eq!(output, vec![b'X']);
-//! # Ok::<(), Box<dyn Error>>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
 mod io;

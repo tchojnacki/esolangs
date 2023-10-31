@@ -83,6 +83,7 @@ impl Display for Instruction {
     ///
     /// Other instructions are displayed as `¿`, even though they are valid instructions.
     ///
+    /// # Examples
     /// ```
     /// # use brainlib::Instruction;
     /// assert_eq!(Instruction::MutCell(1).to_string(), "+");

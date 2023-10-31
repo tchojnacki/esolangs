@@ -1,13 +1,13 @@
 //! `brainlib` is a crate used to compile, optimize and interpret [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck).
 //!
+//! # Examples
 //! ```no_run
-//! # use std::error::Error;
 //! use brainlib::{interpreter::Engine, Program, Settings};
 //!
 //! let source = "+[>>>->-[>->----<<<]>>]>.---.>+..+++.>>.<.>>---.<<<.+++.------.<-.>>+.";
 //! let program = Program::compile(source, &Settings::new())?;
 //! Engine::new_std_default(program).run()?;
-//! # Ok::<(), Box<dyn Error>>(())
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
 #![warn(missing_docs)]

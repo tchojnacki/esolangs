@@ -13,10 +13,32 @@ use crate::backend::{
     wasm::WasmTarget,
 };
 
+/// Represents a WebAssembly module for a given [`Program`].
+///
+/// A module can be created from a [`Program`] using [`WasmModule::compile_from`].
+///
+/// The underlying WASM module can be emitted as WAT using [`WasmModule::emit_wat`].
+///
+/// You should select an appropriate [`WasmTarget`] for your use case.
+///
+/// # See also
+/// - [Modules - Structure](https://webassembly.github.io/spec/core/syntax/modules.html)
+/// - [Modules - Text Format](https://webassembly.github.io/spec/core/text/modules.html)
 #[must_use]
+#[derive(Debug)]
 pub struct WasmModule(Module);
 
 impl WasmModule {
+    /// Creates a new [`WasmModule`] from a [`Program`].
+    ///
+    /// The I/O functions provided by the selected [`WasmTarget`].
+    ///
+    /// The entire program code is placed in the `$main` function.
+    /// This function is exported as `_start`, alongside the memory named `memory`.
+    /// The tape pointer is stored in the global `$ptr`, which is not exported.
+    /// The behaviour above applies to all targets.
+    ///
+    /// All programs produce a valid module, panics can only occur due to internal errors.
     pub fn compile_from(program: &Program, target: WasmTarget, settings: &Settings) -> Self {
         let mut module = Module::new();
 
@@ -70,6 +92,7 @@ impl WasmModule {
         Self(module)
     }
 
+    /// Emits the underlying WASM module as WAT to the given [`Write`].
     pub fn emit_wat(&self, mut write: impl Write) -> io::Result<()> {
         write.write_all(self.0.to_wat().expect("internal error").as_bytes())
     }

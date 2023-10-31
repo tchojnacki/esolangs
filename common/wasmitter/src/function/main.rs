@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[must_use]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Func {
     type_idx: TypeIdx,
     func_idx: FuncIdx,

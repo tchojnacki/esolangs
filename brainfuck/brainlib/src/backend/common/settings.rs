@@ -5,11 +5,11 @@
 /// - **strictness** - should an overflow in a data cell or the pointer be treated as an error
 /// - **debugging** - should the breakpoints be enabled or ignored
 ///
+/// # Examples
 /// ```
-/// # use std::error::Error;
 /// # use brainlib::Settings;
 /// let settings = Settings::try_new(1000, true, false).ok_or("invalid settings")?;
-/// # Ok::<(), Box<dyn Error>>(())
+/// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
