@@ -11,6 +11,7 @@ pub(crate) fn optimize(program: Program, settings: &Settings) -> Program {
     let program = remove_breakpoints(program);
     let program = merge_muts(program, settings);
     let program = create_sets(program, settings);
+    let program = remove_unused_loops(program);
     reduce_cell_chains(program, settings)
 }
 
@@ -171,6 +172,48 @@ fn reduce_cell_chains(input: Program, settings: &Settings) -> Program {
     builder.build()
 }
 
+fn remove_unused_loops(input: Program) -> Program {
+    let mut input = input.0.into_iter();
+    let mut builder = Builder::with_capacity(input.len());
+    let mut can_remove = true;
+
+    while let Some(instr) = input.next() {
+        match instr {
+            I::SetCell(0) => {
+                builder.preserve(instr);
+                can_remove = true;
+            },
+            I::SetCell(_) | I::MutPointer(_) | I::MutCell(_) | I::Input => {
+                builder.preserve(instr);
+                can_remove = false;
+            },
+            I::JumpLeftNz(_) | I::Breakpoint(_) | I::Output => builder.preserve(instr),
+            I::JumpRightZ(_) =>
+                if can_remove {
+                    builder.omit(1);
+                    let mut depth = 0;
+                    for instr in input.by_ref() {
+                        builder.omit(1);
+                        match instr {
+                            I::JumpRightZ(_) => depth += 1,
+                            I::JumpLeftNz(_) =>
+                                if depth == 0 {
+                                    break;
+                                } else {
+                                    depth -= 1;
+                                },
+                            _ => (),
+                        }
+                    }
+                } else {
+                    builder.preserve(instr);
+                },
+        }
+    }
+
+    builder.build()
+}
+
 mod builder {
     use super::{Program, I};
 
@@ -261,7 +304,7 @@ mod tests {
         *gen.choose(&range.collect::<Vec<_>>()).unwrap()
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Debug, Clone)]
     struct SimpleProgram(Program);
 
     impl Arbitrary for SimpleProgram {
@@ -334,6 +377,7 @@ mod tests {
         assert_eq!(
             optimize(
                 Program(vec![
+                    I::SetCell(1),
                     I::JumpRightZ(5),
                     I::SetCell(1),
                     I::SetCell(2),
@@ -344,6 +388,7 @@ mod tests {
                 &settings
             ),
             Program(vec![
+                I::SetCell(1),
                 I::JumpRightZ(3),
                 I::SetCell(3),
                 I::MutPointer(1),
@@ -387,6 +432,7 @@ mod tests {
         assert_eq!(
             optimize(
                 Program(vec![
+                    I::SetCell(1),
                     I::JumpRightZ(3),
                     I::MutCell(1),
                     I::JumpLeftNz(3),
@@ -395,6 +441,7 @@ mod tests {
                 &Settings::new().with_strict()
             ),
             Program(vec![
+                I::SetCell(1),
                 I::JumpRightZ(3),
                 I::MutCell(1),
                 I::JumpLeftNz(3),
@@ -452,6 +499,37 @@ mod tests {
             ),
             Program(vec![I::MutPointer(-3), I::SetCell(255), I::MutCell(1)])
         );
+    }
+
+    #[test]
+    fn removes_loops_which_cant_be_entered() {
+        assert_eq!(
+            optimize(
+                Program(vec![
+                    I::JumpRightZ(3),
+                    I::MutPointer(1),
+                    I::JumpLeftNz(3),
+                    I::MutPointer(3),
+                    I::JumpRightZ(3),
+                    I::MutPointer(1),
+                    I::JumpLeftNz(3),
+                    I::MutPointer(3),
+                    I::SetCell(0),
+                    I::JumpRightZ(3),
+                    I::MutPointer(1),
+                    I::JumpLeftNz(3)
+                ]),
+                &Settings::new()
+            ),
+            Program(vec![
+                I::MutPointer(3),
+                I::JumpRightZ(3),
+                I::MutPointer(1),
+                I::JumpLeftNz(3),
+                I::MutPointer(3),
+                I::SetCell(0),
+            ])
+        )
     }
 
     #[quickcheck]

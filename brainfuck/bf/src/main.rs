@@ -1,7 +1,11 @@
-use std::process::ExitCode;
+use std::{io::stdout, process::ExitCode};
 
-use args::Arguments;
-use brainlib::{interpreter::Engine, Program, Settings};
+use args::{Arguments, Target};
+use brainlib::{
+    interpreter::Engine,
+    wasm::{WasmModule, WasmTarget},
+    Program, Settings,
+};
 use clap::Parser;
 use debugger::run_debugger;
 use errors::{show_error, CliError};
@@ -25,12 +29,19 @@ fn main() -> ExitCode {
 fn run() -> Result<(), String> {
     let args = Arguments::parse();
     let settings = Settings::from(&args);
-    let debug = settings.debug();
     let source = args.input.get_source()?;
     let program = Program::compile(&source, &settings).map_err(|e| e.message(&source))?;
-    let mut eng = Engine::new_std(program, settings);
-    match debug {
-        true => run_debugger(eng, &source),
-        false => eng.run().map_err(|e| e.message(&source)),
+
+    match args.target {
+        Target::Debug => run_debugger(Engine::new_std(program, settings), &source),
+        Target::Run => Engine::new_std(program, settings)
+            .run()
+            .map_err(|e| e.message(&source)),
+        Target::WasmText => WasmModule::compile_from(&program, WasmTarget::Normal, &settings)
+            .emit_wat(stdout())
+            .map_err(|_| "Error: Could not write to stdout.".into()),
+        Target::WasmWasiText => WasmModule::compile_from(&program, WasmTarget::Wasi, &settings)
+            .emit_wat(stdout())
+            .map_err(|_| "Error: Could not write to stdout.".into()),
     }
 }

@@ -4,7 +4,7 @@ use std::fmt::{self, Display, Formatter};
 ///
 /// A list of instructions is stored inside a [`Program`](crate::Program).
 #[must_use]
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Instruction {
     /// Change the pointer by the given `i32` amount.
     ///
@@ -83,6 +83,7 @@ impl Display for Instruction {
     ///
     /// Other instructions are displayed as `¿`, even though they are valid instructions.
     ///
+    /// # Examples
     /// ```
     /// # use brainlib::Instruction;
     /// assert_eq!(Instruction::MutCell(1).to_string(), "+");

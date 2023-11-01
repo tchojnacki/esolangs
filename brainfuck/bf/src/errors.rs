@@ -3,7 +3,7 @@ use colored::Colorize;
 
 use crate::source::highlight_source;
 
-pub trait CliError {
+pub(crate) trait CliError {
     fn message(&self, source: &str) -> String;
 }
 
@@ -41,6 +41,6 @@ impl CliError for RuntimeError {
     }
 }
 
-pub fn show_error(message: &str) {
+pub(crate) fn show_error(message: &str) {
     eprintln!("\n{}", message.red());
 }

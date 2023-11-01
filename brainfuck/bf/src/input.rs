@@ -6,7 +6,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(next_help_heading = "Input")]
 #[group(required = true)]
-pub struct Input {
+pub(crate) struct Input {
     /// Path to the file containing the program code
     #[arg(short, long)]
     file: Option<PathBuf>,
@@ -21,7 +21,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn get_source(self) -> Result<String, String> {
+    pub(crate) fn get_source(self) -> Result<String, String> {
         match (self.file, self.code, self.stdin) {
             (Some(path), None, false) => fs::read_to_string(&path).map_err(|_| {
                 format!(

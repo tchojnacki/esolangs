@@ -1,7 +1,14 @@
 [package]
 name = "bf"
 version = "0.1.0"
+authors = ["Tomasz Chojnacki <tomaszchojnacki2001@gmail.com>"]
 edition = "2021"
+description = "Command line interface for Brainfuck compilation."
+repository = "https://github.com/tchojnacki/esolangs"
+license = "MIT OR Apache-2.0"
+keywords = ["brainfuck", "compiler", "cli"]
+categories = ["command-line-interface", "compilers"]
+publish = false
 
 [dependencies]
 brainlib = { path = "../brainlib" }

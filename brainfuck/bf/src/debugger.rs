@@ -16,7 +16,7 @@ enum ReplAction {
     EndSilently,
 }
 
-pub fn run_debugger(mut eng: StdEngine, source: &str) -> Result<(), String> {
+pub(crate) fn run_debugger(mut eng: StdEngine, source: &str) -> Result<(), String> {
     macro_rules! enter_repl {
         () => {
             match repl(&mut eng, source) {

@@ -7,8 +7,18 @@ use crate::{
 };
 
 /// A generic representation of the interpreter's engine state.
+///
+/// # Examples
+/// ```
+/// # use brainlib::{interpreter::Engine, Program, Settings};
+/// let settings = Settings::default();
+/// let program = Program::compile(",[.,]", &settings)?;
+///
+/// let engine = Engine::new_std(program, settings);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 #[must_use]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Engine<In: Read, Out: Write> {
     program: Program,
     pc: usize,
