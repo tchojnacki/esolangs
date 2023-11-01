@@ -1,7 +1,15 @@
 [package]
 name = "wasmitter"
 version = "0.1.0"
+authors = ["Tomasz Chojnacki <tomaszchojnacki2001@gmail.com>"]
 edition = "2021"
+description = "Crate for building and emitting WebAssembly modules programmatically."
+documentation = "https://tchojnacki.github.io/esolangs/wasmitter"
+repository = "https://github.com/tchojnacki/esolangs"
+license = "MIT OR Apache-2.0"
+keywords = ["wasm", "wat", "emitter", "builder"]
+categories = ["encoding", "wasm"]
+publish = false
 
 [dependencies]
 thiserror = "1.0.50"

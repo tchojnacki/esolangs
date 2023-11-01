@@ -16,5 +16,6 @@ Engine::new_std_default(program).run().expect("runtime error");
 ## Features
 
 - Fully implemented: lexer, parser, bytecode generator, optimizer, interpreter.
+- Ability to compile to WebAssembly.
 - Covered by unit and property tests.
 - No unsafe code.
