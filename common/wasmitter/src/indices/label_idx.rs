@@ -1,5 +1,18 @@
 use crate::{internal::WasmIndex, text::Id, WasmError};
 
+/// References an unnamed label within a function.
+///
+/// May cause [`WasmError::InvalidLabel`] during validation if the label index is out of bounds.
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, Instr, indices::LabelIdx, instruction::BlockType};
+/// # let mut module = Module::new();
+/// module.func("$func", |scope| {
+///     Instr::Block(BlockType::default(), vec![Instr::Br(LabelIdx::from(0))])
+/// });
+/// # assert!(module.validate().is_none());
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct LabelIdx(pub(crate) u32);

@@ -1,3 +1,9 @@
+//! Types defined by the WebAssembly specification.
+//!
+//! # Specification
+//! - [Types - Structure](https://webassembly.github.io/spec/core/syntax/types.html)
+//! - [Types - Text Format](https://webassembly.github.io/spec/core/text/types.html)
+
 mod function;
 mod global;
 mod limits;

@@ -9,7 +9,8 @@
 //!
 //! # Examples
 //! ```
-//! # use brainlib::{Program, Settings, interpreter::Engine};
+//! use brainlib::{interpreter::Engine, Program, Settings};
+//!
 //! let source = ",[.,]";
 //! let program = Program::compile(source, &Settings::default())?;
 //!

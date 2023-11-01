@@ -1,4 +1,4 @@
-//! `brainlib` is a crate used to compile, optimize and interpret [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck).
+//! **brainlib** is a crate used to compile, optimize and interpret [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck).
 //!
 //! # Examples
 //! ```no_run

@@ -11,8 +11,10 @@
 //! # Examples
 //! ```
 //! # use std::io::stdout;
-//! # use brainlib::{Program, Settings};
-//! use brainlib::wasm::{WasmModule, WasmTarget};
+//! use brainlib::{
+//!     wasm::{WasmModule, WasmTarget},
+//!     Program, Settings,
+//! };
 //!
 //! let settings = Settings::default();
 //! let source = ",[.,]";

@@ -1,9 +1,13 @@
 use std::fmt::{self, Display, Formatter};
 
+/// Signedness specifier for instructions.
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub enum Sx {
+    /// Instruction operates on unsigned values.
     U,
+
+    /// Instruction operates on signed values.
     S,
 }
 

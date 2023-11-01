@@ -3,6 +3,21 @@ use crate::{
     types::{ValType, F32, F64, I32, I64},
 };
 
+/// An instruction which can be used in global initialization.
+///
+/// **NOTE:** Currently, only a subset of those instructions is supported and constant instructions
+/// can't be composed into constant expressions. Namely, you can only initialize globals to numeric values.
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, instruction::ConstInstr, types::Mut};
+/// # let mut module = Module::new();
+/// module.global("$my_global", Mut::Const, ConstInstr::I32Const(42));
+/// # assert!(module.validate().is_none());
+/// ```
+///
+/// # Specification
+/// - [Constant Expressions - Validation](https://webassembly.github.io/spec/core/valid/instructions.html#constant-expressions)
 #[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone)]

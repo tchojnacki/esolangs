@@ -10,7 +10,7 @@ use crate::{
 ///
 /// # Examples
 /// ```
-/// # use brainlib::{Program, Settings, interpreter::Engine};
+/// # use brainlib::{interpreter::Engine, Program, Settings};
 /// let settings = Settings::default();
 /// let program = Program::compile(",[.,]", &settings)?;
 ///

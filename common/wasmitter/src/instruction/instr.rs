@@ -7,6 +7,13 @@ use crate::{
     module::Module,
 };
 
+/// Supported WebAssembly instructions.
+///
+/// Non-exhaustive, since new instructions may get supported in the future.
+///
+/// # Specification
+/// - [Instructions - Structure](https://webassembly.github.io/spec/core/syntax/instructions.html)
+/// - [Instructions - Text Format](https://webassembly.github.io/spec/core/text/instructions.html)
 #[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone)]

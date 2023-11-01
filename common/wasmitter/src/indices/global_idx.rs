@@ -5,6 +5,21 @@ use crate::{
     WasmError,
 };
 
+/// References a single global (imported or defined) within a module.
+///
+/// Can be obtained from:
+/// - [`Module::import_global`]
+/// - [`Module::global`]
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, indices::GlobalIdx, types::Mut, instruction::ConstInstr};
+/// # let mut module = Module::new();
+/// let global_idx: GlobalIdx = module.global("$my_global", Mut::Const, ConstInstr::I32Const(42));
+///
+/// module.export("my_global", global_idx);
+/// # assert!(module.validate().is_none());
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct GlobalIdx {

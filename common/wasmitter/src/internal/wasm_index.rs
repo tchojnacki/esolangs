@@ -1,8 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
 
 use crate::text::Id;
 
-pub(crate) trait WasmIndex<'a>: Clone + Copy {
+pub(crate) trait WasmIndex<'a>: Debug + Clone + Copy {
     type Ctx;
 
     #[must_use]

@@ -21,7 +21,7 @@ use crate::backend::{
 ///
 /// You should select an appropriate [`WasmTarget`] for your use case.
 ///
-/// # See also
+/// # Specification
 /// - [Modules - Structure](https://webassembly.github.io/spec/core/syntax/modules.html)
 /// - [Modules - Text Format](https://webassembly.github.io/spec/core/text/modules.html)
 #[must_use]

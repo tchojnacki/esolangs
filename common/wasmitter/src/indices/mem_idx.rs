@@ -5,6 +5,21 @@ use crate::{
     WasmError,
 };
 
+/// References a single memory (imported or defined) within a module.
+///
+/// Can be obtained from:
+/// - [`Module::import_memory`]
+/// - [`Module::memory`]
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, indices::MemIdx};
+/// # let mut module = Module::new();
+/// let mem_idx: MemIdx = module.memory("$my_memory", 1);
+///
+/// module.export("my_memory", mem_idx);
+/// # assert!(module.validate().is_none())
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct MemIdx {

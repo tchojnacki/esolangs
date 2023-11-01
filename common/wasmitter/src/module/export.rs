@@ -12,6 +12,28 @@ enum ExportDescKind {
     Global(GlobalIdx),
 }
 
+/// Describes an export from the module.
+///
+/// Used as an argument to [`Module::export`].
+///
+/// This type can't be directly constructed. Instead, use conversions ([`ExportDesc::from`]):
+/// - [`FuncIdx`]
+/// - [`MemIdx`]
+/// - [`GlobalIdx`]
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, indices::{FuncIdx, MemIdx, GlobalIdx}, types::Mut, instruction::ConstInstr};
+/// # let mut module = Module::new();
+/// let func_idx: FuncIdx = module.import_func("external", "func", "$func", (), ());
+/// let mem_idx: MemIdx = module.memory("$mem", 1);
+/// let global_idx: GlobalIdx = module.global("$global", Mut::Const, ConstInstr::I32Const(42));
+///
+/// module.export("func", func_idx);
+/// module.export("mem", mem_idx);
+/// module.export("global", global_idx);
+/// # assert!(module.validate().is_none());
+/// ```
 #[must_use]
 #[derive(Debug)]
 pub struct ExportDesc(ExportDescKind);

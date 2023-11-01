@@ -5,6 +5,27 @@ use crate::{
     WasmError,
 };
 
+/// References a single function (imported or defined) within a module.
+///
+/// Can be obtained from:
+/// - [`Module::import_func`]
+/// - [`Module::func`]
+///
+/// # Examples
+/// ```
+/// # use wasmitter::{Module, indices::FuncIdx, types::I32};
+/// # let mut module = Module::new();
+/// let func_idx: FuncIdx = module.import_func(
+///     "wasi_unstable",
+///     "fd_read",
+///     "$fd_read",
+///     (I32, I32, I32, I32),
+///     I32,
+/// );
+///
+/// module.export("fd_read", func_idx);
+/// # assert!(module.validate().is_none());
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct FuncIdx {

@@ -1,5 +1,23 @@
 use crate::WasmError;
 
+/// A pair of minimum and an optional maximum value.
+///
+/// Used to specify bounds for [`Module::memory`](crate::Module::memory).
+///
+/// Can be converted to from a single `u32` or a pair of `u32`s.
+///
+/// Can return [`WasmError::InvalidLimits`] during validation if the minimum is greater than the maximum.
+///
+/// # Examples
+/// ```
+/// # use wasmitter::types::Limits;
+/// let bounded_limit = Limits::from((3, 8));
+/// let unbounded_limit = Limits::from(5);
+/// ```
+///
+/// # Specification
+/// - [Limits - Structure](https://webassembly.github.io/spec/core/syntax/types.html#limits)
+/// - [Limits - Text Format](https://webassembly.github.io/spec/core/text/types.html#limits)
 #[must_use]
 #[derive(Debug)]
 pub struct Limits {

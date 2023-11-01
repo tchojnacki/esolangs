@@ -13,6 +13,11 @@ enum LocalIdxKind {
     Local(u32),
 }
 
+/// References a local (or a parameter) in a function.
+///
+/// Can be obtained from:
+/// - [`FuncScope::add_param`](crate::function::FuncScope::add_param)
+/// - [`FuncScope::add_local`](crate::function::FuncScope::add_local)
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct LocalIdx {
